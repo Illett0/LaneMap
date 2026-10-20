@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+editor.pid
+logs/
+history/
+*.csv.tmp

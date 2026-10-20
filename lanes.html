@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>車線接続図（horikawa-lanes.csv）</title><style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#1f2933;--muted:#52606d;--line:#d9dee4;--accent:#2f5f98}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif}
+header{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--line);
+  padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+h1{font-size:17px;margin:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--card);padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:#fff}
+.lbl{font-size:12px;color:var(--muted);margin-right:4px}
+.count{font-size:13px;color:var(--muted)}
+main{padding:16px;display:grid;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto}
+.card h2{font-size:14px;margin:0 0 8px}
+.pane[hidden],.lint[hidden]{display:none}
+.lint ul{margin:0;padding-left:0;list-style:none;font-size:13px;line-height:1.7}
+.lint li{padding:1px 6px;border-radius:4px}
+.lv-エラー{color:#b42318;background:#fef3f2}
+.lv-警告{color:#93370d}
+.lv-情報{color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin:6px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px}
+.lg{display:inline-flex;align-items:center;gap:4px}
+</style></head>
+<body data-dir="南行き">
+<header><h1>車線接続図（horikawa-lanes.csv）</h1>
+<span class="seg"><button data-set-dir="南行き">南行き</button><button data-set-dir="北行き">北行き</button></span>
+<span><span class="lbl">向き</span><span class="seg"><button data-set-view="map">上空から見た向き</button><button data-set-view="csv">CSV の並び順</button></span></span>
+<span class="count">エラー 0 / 警告 2 / 情報 0</span>
+</header>
+<main>
+<section class="card"><h2>凡例</h2><div class="legend"><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ln c-k" x="12" y="2" width="20" height="30" rx="3"/></svg><span>確：現地・ストリートビューで確認</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ln c-s" x="12" y="2" width="20" height="30" rx="3"/></svg><span>資：資料にある</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ln c-p" x="12" y="2" width="20" height="30" rx="3"/></svg><span>推：推定</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ln c-u" x="12" y="2" width="20" height="30" rx="3"/></svg><span>空欄：確度不明</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><path class="rb c-k" d="M4,2 C4,17 22,17 22,32 L25,32 C25,17 18,17 18,2 Z"/><path class="rb c-k" d="M22,2 C22,17 22,17 22,32 L36,32 C36,17 36,17 36,2 Z"/></svg><span>合流（細くして寄せる）</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><path class="ex c-k" d="M10,2 C10,22 10,22 28,22"/><polygon class="ah c-k" points="28,14 40,22 28,30"/></svg><span>側道へ離脱</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><path class="rb c-k" d="M13,2 C13,17 14,17 14,32 L32,32 C32,17 15,17 15,2 Z"/></svg><span>新しく現れる車線</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ph" x="8" y="2" width="28" height="30" rx="3"/></svg><span>未入力</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><path class="stub" d="M22,2 L22,16"/><text class="q" x="22" y="30">?</text></svg><span>対応未定（接続を入力）</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><line class="stop" x1="6" y1="17" x2="38" y2="17"/></svg><span>停止線（手前の行）</span></span></div>
+<p class="note">矢印は路面標示（↰ ↑ ↱）を、図の進む向き（上から下）に合わせて回しています。空欄のデータは推測で埋めず「未入力」「対応未定」と描きます。</p></section>
+<div class="pane card" data-dir="南行き" data-view="map"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="610" height="2672" viewBox="0 0 610 2672" data-direction="南行き" data-view="map"><style>
+.lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
+.lm .ttl{font-size:17px;font-weight:700}
+.lm .cap{font-size:12px;fill:#52606d}
+.lm .pt{font-size:14px;font-weight:700}
+.lm .sub{font-size:11px;fill:#52606d}
+.lm .badge{font-size:11px;font-weight:700;fill:#fff}
+.lm .strip{fill:#e9ecef}
+.lm .stripedge{stroke:#adb5bd;stroke-width:1}
+.lm .stripname{font-size:12px;fill:#495057;font-weight:700}
+.lm .stop{stroke:#1f2933;stroke-width:3.5}
+.lm .ln,.lm .rb{stroke-width:1.5}
+.lm .ln.c-k,.lm .rb.c-k{fill:#2f5f98;stroke:#2f5f98}
+.lm .ln.c-s,.lm .rb.c-s{fill:#a8c0df;stroke:#87a6cf}
+.lm .ln.c-p,.lm .rb.c-p{fill:#e7eef8;stroke:#2f5f98;stroke-dasharray:5 3}
+.lm .ln.c-u,.lm .rb.c-u{fill:#f3f3f3;stroke:#9aa0a6;stroke-dasharray:1.5 3}
+.lm .ln.bad{stroke:#d92d20;stroke-width:2.5;stroke-dasharray:none}
+.lm .ex{fill:none;stroke-width:12}
+.lm .ex.c-k{stroke:#2f5f98}.lm .ex.c-s{stroke:#a8c0df}
+.lm .ex.c-p{stroke:#2f5f98;stroke-dasharray:7 5}.lm .ex.c-u{stroke:#9aa0a6;stroke-dasharray:2 4}
+.lm .ah.c-k,.lm .ah.c-p{fill:#2f5f98}.lm .ah.c-s{fill:#a8c0df}.lm .ah.c-u{fill:#9aa0a6}
+.lm .gl{font-size:20px;text-anchor:middle;dominant-baseline:central;fill:#17324d}
+.lm .gl.on-k{fill:#fff}.lm .gl.on-u{fill:#5f6368}
+.lm .gl.t2{font-size:15px}.lm .gl.t3{font-size:12px}.lm .gl.bus{font-size:12px;font-weight:700}
+.lm .exname{font-size:12px;font-weight:700;fill:#1f2933;paint-order:stroke;stroke:#fff;stroke-width:3px}
+.lm .ph{fill:#fafafa;stroke:#9aa0a6;stroke-width:1.2;stroke-dasharray:2 3}
+.lm .phtext{font-size:12px;fill:#7b8794;text-anchor:middle;dominant-baseline:central}
+.lm .stub{fill:none;stroke:#9aa0a6;stroke-width:3;stroke-dasharray:3 3}
+.lm .blank{fill:none;stroke:#c3c7cc;stroke-width:2;stroke-dasharray:2 5}
+.lm .q{font-size:13px;font-weight:700;fill:#b54708;text-anchor:middle}
+.lm .warn{font-size:12px;font-weight:700;fill:#b54708;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:4px}
+.lm .cut{font-size:18px;font-weight:700;fill:#d92d20;text-anchor:middle}
+.lm .flow{font-size:12px;fill:#52606d;text-anchor:middle}
+.lm .sel{stroke:#f08c00 !important;stroke-width:3.5 !important;stroke-dasharray:none !important}
+.lm text.sel{fill:#f08c00;stroke:none !important}
+</style><rect width="100%" height="100%" fill="#fff"/><rect class="strip" x="210" y="101" width="392" height="30"/><line class="stripedge" x1="210" y1="101" x2="602" y2="101"/><line class="stripedge" x1="210" y1="131" x2="602" y2="131"/><rect class="strip" x="210" y="381" width="392" height="30"/><line class="stripedge" x1="210" y1="381" x2="602" y2="381"/><line class="stripedge" x1="210" y1="411" x2="602" y2="411"/><rect class="strip" x="210" y="681" width="392" height="30"/><line class="stripedge" x1="210" y1="681" x2="602" y2="681"/><line class="stripedge" x1="210" y1="711" x2="602" y2="711"/><rect class="strip" x="210" y="981" width="392" height="30"/><line class="stripedge" x1="210" y1="981" x2="602" y2="981"/><line class="stripedge" x1="210" y1="1011" x2="602" y2="1011"/><rect class="strip" x="210" y="1281" width="392" height="30"/><line class="stripedge" x1="210" y1="1281" x2="602" y2="1281"/><line class="stripedge" x1="210" y1="1311" x2="602" y2="1311"/><rect class="strip" x="210" y="1581" width="392" height="30"/><line class="stripedge" x1="210" y1="1581" x2="602" y2="1581"/><line class="stripedge" x1="210" y1="1611" x2="602" y2="1611"/><rect class="strip" x="210" y="1881" width="392" height="30"/><line class="stripedge" x1="210" y1="1881" x2="602" y2="1881"/><line class="stripedge" x1="210" y1="1911" x2="602" y2="1911"/><rect class="strip" x="210" y="2181" width="392" height="30"/><line class="stripedge" x1="210" y1="2181" x2="602" y2="2181"/><line class="stripedge" x1="210" y1="2211" x2="602" y2="2211"/><rect class="strip" x="210" y="2595" width="392" height="30"/><line class="stripedge" x1="210" y1="2595" x2="602" y2="2595"/><line class="stripedge" x1="210" y1="2625" x2="602" y2="2625"/><path class="blank" d="M410,204 L410,288"/><path class="blank" d="M410,338 L410,454"/><path class="blank" d="M410,504 L410,588"/><path class="blank" d="M410,638 L410,754"/><path class="blank" d="M410,804 L410,888"/><path class="blank" d="M410,938 L410,1054"/><path class="blank" d="M410,1104 L410,1188"/><path class="blank" d="M410,1238 L410,1354"/><path class="blank" d="M410,1404 L410,1488"/><path class="blank" d="M410,1538 L410,1654"/><path class="blank" d="M410,1704 L410,1788"/><path class="blank" d="M410,1838 L410,1954"/><path class="blank" d="M410,2004 L410,2088"/><path class="blank" d="M410,2138 L410,2254"/><path class="blank" d="M410,2304 L410,2388"/><path class="blank" d="M410,2438 L410,2522"/><rect class="ph" data-line="2" x="370" y="154" width="80" height="50" rx="4"><title>2行目 南行き 順1 四条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="3" x="370" y="288" width="80" height="50" rx="4"><title>3行目 南行き 順2 堀川高辻 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="4" x="370" y="454" width="80" height="50" rx="4"><title>4行目 南行き 順3 堀川高辻 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="5" x="370" y="588" width="80" height="50" rx="4"><title>5行目 南行き 順4 堀川五条 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="6" x="370" y="754" width="80" height="50" rx="4"><title>6行目 南行き 順5 堀川五条 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に「交差点の南側で直進3→2車線」とあるが七条堀川側の記述の可能性もあり要確認</title></rect><rect class="ph" data-line="7" x="370" y="888" width="80" height="50" rx="4"><title>7行目 南行き 順6 七条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="8" x="370" y="1054" width="80" height="50" rx="4"><title>8行目 南行き 順7 七条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料（近畿地方整備局H29）に「南側流出部で直進3→2車線」とある</title></rect><rect class="ph" data-line="9" x="370" y="1188" width="80" height="50" rx="4"><title>9行目 南行き 順8 堀川塩小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に「北側区間で直進3→2車線」「アンダーパスで直進2車線」とある</title></rect><rect class="ph" data-line="10" x="370" y="1354" width="80" height="50" rx="4"><title>10行目 南行き 順9 堀川塩小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="11" x="370" y="1488" width="80" height="50" rx="4"><title>11行目 南行き 順10 八条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料にアンダーパス・直進2車線とある</title></rect><rect class="ph" data-line="12" x="370" y="1654" width="80" height="50" rx="4"><title>12行目 南行き 順11 八条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="13" x="370" y="1788" width="80" height="50" rx="4"><title>13行目 南行き 順12 九条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に右折・左折車線と直進車線を分離する対策実施（令和元年度）とある</title></rect><rect class="ph" data-line="14" x="370" y="1954" width="80" height="50" rx="4"><title>14行目 南行き 順13 九条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 国道1号が屈折する箇所とされる</title></rect><rect class="ph" data-line="15" x="370" y="2088" width="80" height="50" rx="4"><title>15行目 南行き 順14 十条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に九条油小路〜十条油小路で片側3→2車線の減少とある</title></rect><rect class="ph" data-line="16" x="370" y="2254" width="80" height="50" rx="4"><title>16行目 南行き 順15 十条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="17" x="370" y="2388" width="80" height="50" rx="4"><title>17行目 南行き 順16 上鳥羽IC付近 区間中
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="18" x="370" y="2522" width="80" height="50" rx="4"><title>18行目 南行き 順17 久世橋通油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に久世橋通油小路の手前で車線数の減少とある</title></rect><text class="ttl" x="16" y="28">南行き：四条堀川 → 久世橋通油小路</text><text class="cap" x="16" y="48">上空から見た向き（運転者の左＝画面の右）　線の見た目は確度（凡例）</text><text class="flow" x="410" y="68">進行方向 ↓</text><text class="stripname" x="24" y="120">┄ 四条堀川</text><text class="stripname" x="24" y="400">┄ 堀川高辻</text><text class="stripname" x="24" y="700">┄ 堀川五条</text><text class="stripname" x="24" y="1000">┄ 七条堀川</text><text class="stripname" x="24" y="1300">┄ 堀川塩小路</text><text class="stripname" x="24" y="1600">┄ 八条油小路</text><text class="stripname" x="24" y="1900">┄ 九条油小路</text><text class="stripname" x="24" y="2200">┄ 十条油小路</text><text class="stripname" x="24" y="2614">┄ 久世橋通油小路</text><text class="phtext" x="410" y="179">未入力</text><g data-line="2"><title>2行目 南行き 順1 四条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="174">四条堀川</text><rect x="16" y="182" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="194" text-anchor="middle">直後</text><text class="sub" x="56" y="194">確度:不明　2行目</text></g><text class="phtext" x="410" y="313">未入力</text><g data-line="3"><title>3行目 南行き 順2 堀川高辻 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="308">堀川高辻</text><rect x="16" y="316" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="328" text-anchor="middle">手前</text><text class="sub" x="56" y="328">確度:不明　3行目</text></g><text class="phtext" x="410" y="479">未入力</text><g data-line="4"><title>4行目 南行き 順3 堀川高辻 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="474">堀川高辻</text><rect x="16" y="482" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="494" text-anchor="middle">直後</text><text class="sub" x="56" y="494">確度:不明　4行目</text></g><text class="phtext" x="410" y="613">未入力</text><g data-line="5"><title>5行目 南行き 順4 堀川五条 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="608">堀川五条</text><rect x="16" y="616" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="628" text-anchor="middle">手前</text><text class="sub" x="56" y="628">確度:不明　5行目</text></g><text class="phtext" x="410" y="779">未入力</text><g data-line="6"><title>6行目 南行き 順5 堀川五条 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に「交差点の南側で直進3→2車線」とあるが七条堀川側の記述の可能性もあり要確認</title><text class="pt" x="16" y="774">堀川五条</text><rect x="16" y="782" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="794" text-anchor="middle">直後</text><text class="sub" x="56" y="794">確度:不明　6行目</text></g><text class="phtext" x="410" y="913">未入力</text><g data-line="7"><title>7行目 南行き 順6 七条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="908">七条堀川</text><rect x="16" y="916" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="928" text-anchor="middle">手前</text><text class="sub" x="56" y="928">確度:不明　7行目</text></g><text class="phtext" x="410" y="1079">未入力</text><g data-line="8"><title>8行目 南行き 順7 七条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料（近畿地方整備局H29）に「南側流出部で直進3→2車線」とある</title><text class="pt" x="16" y="1074">七条堀川</text><rect x="16" y="1082" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1094" text-anchor="middle">直後</text><text class="sub" x="56" y="1094">確度:不明　8行目</text></g><text class="phtext" x="410" y="1213">未入力</text><g data-line="9"><title>9行目 南行き 順8 堀川塩小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に「北側区間で直進3→2車線」「アンダーパスで直進2車線」とある</title><text class="pt" x="16" y="1208">堀川塩小路</text><rect x="16" y="1216" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1228" text-anchor="middle">手前</text><text class="sub" x="56" y="1228">確度:不明　9行目</text></g><text class="phtext" x="410" y="1379">未入力</text><g data-line="10"><title>10行目 南行き 順9 堀川塩小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1374">堀川塩小路</text><rect x="16" y="1382" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1394" text-anchor="middle">直後</text><text class="sub" x="56" y="1394">確度:不明　10行目</text></g><text class="phtext" x="410" y="1513">未入力</text><g data-line="11"><title>11行目 南行き 順10 八条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料にアンダーパス・直進2車線とある</title><text class="pt" x="16" y="1508">八条油小路</text><rect x="16" y="1516" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1528" text-anchor="middle">手前</text><text class="sub" x="56" y="1528">確度:不明　11行目</text></g><text class="phtext" x="410" y="1679">未入力</text><g data-line="12"><title>12行目 南行き 順11 八条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1674">八条油小路</text><rect x="16" y="1682" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1694" text-anchor="middle">直後</text><text class="sub" x="56" y="1694">確度:不明　12行目</text></g><text class="phtext" x="410" y="1813">未入力</text><g data-line="13"><title>13行目 南行き 順12 九条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に右折・左折車線と直進車線を分離する対策実施（令和元年度）とある</title><text class="pt" x="16" y="1808">九条油小路</text><rect x="16" y="1816" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1828" text-anchor="middle">手前</text><text class="sub" x="56" y="1828">確度:不明　13行目</text></g><text class="phtext" x="410" y="1979">未入力</text><g data-line="14"><title>14行目 南行き 順13 九条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 国道1号が屈折する箇所とされる</title><text class="pt" x="16" y="1974">九条油小路</text><rect x="16" y="1982" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1994" text-anchor="middle">直後</text><text class="sub" x="56" y="1994">確度:不明　14行目</text></g><text class="phtext" x="410" y="2113">未入力</text><g data-line="15"><title>15行目 南行き 順14 十条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に九条油小路〜十条油小路で片側3→2車線の減少とある</title><text class="pt" x="16" y="2108">十条油小路</text><rect x="16" y="2116" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="2128" text-anchor="middle">手前</text><text class="sub" x="56" y="2128">確度:不明　15行目</text></g><text class="phtext" x="410" y="2279">未入力</text><g data-line="16"><title>16行目 南行き 順15 十条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2274">十条油小路</text><rect x="16" y="2282" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="2294" text-anchor="middle">直後</text><text class="sub" x="56" y="2294">確度:不明　16行目</text></g><text class="phtext" x="410" y="2413">未入力</text><g data-line="17"><title>17行目 南行き 順16 上鳥羽IC付近 区間中
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2408">上鳥羽IC付近</text><rect x="16" y="2416" width="46" height="16" rx="3" fill="#6b7280"/><text class="badge" x="39.0" y="2428" text-anchor="middle">区間中</text><text class="sub" x="68" y="2428">確度:不明　17行目</text></g><text class="phtext" x="410" y="2547">未入力</text><g data-line="18"><title>18行目 南行き 順17 久世橋通油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に久世橋通油小路の手前で車線数の減少とある</title><text class="pt" x="16" y="2542">久世橋通油小路</text><rect x="16" y="2550" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="2562" text-anchor="middle">手前</text><text class="sub" x="56" y="2562">確度:不明　18行目</text></g></svg></div><div class="pane card" data-dir="南行き" data-view="csv"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="610" height="2672" viewBox="0 0 610 2672" data-direction="南行き" data-view="csv"><style>
+.lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
+.lm .ttl{font-size:17px;font-weight:700}
+.lm .cap{font-size:12px;fill:#52606d}
+.lm .pt{font-size:14px;font-weight:700}
+.lm .sub{font-size:11px;fill:#52606d}
+.lm .badge{font-size:11px;font-weight:700;fill:#fff}
+.lm .strip{fill:#e9ecef}
+.lm .stripedge{stroke:#adb5bd;stroke-width:1}
+.lm .stripname{font-size:12px;fill:#495057;font-weight:700}
+.lm .stop{stroke:#1f2933;stroke-width:3.5}
+.lm .ln,.lm .rb{stroke-width:1.5}
+.lm .ln.c-k,.lm .rb.c-k{fill:#2f5f98;stroke:#2f5f98}
+.lm .ln.c-s,.lm .rb.c-s{fill:#a8c0df;stroke:#87a6cf}
+.lm .ln.c-p,.lm .rb.c-p{fill:#e7eef8;stroke:#2f5f98;stroke-dasharray:5 3}
+.lm .ln.c-u,.lm .rb.c-u{fill:#f3f3f3;stroke:#9aa0a6;stroke-dasharray:1.5 3}
+.lm .ln.bad{stroke:#d92d20;stroke-width:2.5;stroke-dasharray:none}
+.lm .ex{fill:none;stroke-width:12}
+.lm .ex.c-k{stroke:#2f5f98}.lm .ex.c-s{stroke:#a8c0df}
+.lm .ex.c-p{stroke:#2f5f98;stroke-dasharray:7 5}.lm .ex.c-u{stroke:#9aa0a6;stroke-dasharray:2 4}
+.lm .ah.c-k,.lm .ah.c-p{fill:#2f5f98}.lm .ah.c-s{fill:#a8c0df}.lm .ah.c-u{fill:#9aa0a6}
+.lm .gl{font-size:20px;text-anchor:middle;dominant-baseline:central;fill:#17324d}
+.lm .gl.on-k{fill:#fff}.lm .gl.on-u{fill:#5f6368}
+.lm .gl.t2{font-size:15px}.lm .gl.t3{font-size:12px}.lm .gl.bus{font-size:12px;font-weight:700}
+.lm .exname{font-size:12px;font-weight:700;fill:#1f2933;paint-order:stroke;stroke:#fff;stroke-width:3px}
+.lm .ph{fill:#fafafa;stroke:#9aa0a6;stroke-width:1.2;stroke-dasharray:2 3}
+.lm .phtext{font-size:12px;fill:#7b8794;text-anchor:middle;dominant-baseline:central}
+.lm .stub{fill:none;stroke:#9aa0a6;stroke-width:3;stroke-dasharray:3 3}
+.lm .blank{fill:none;stroke:#c3c7cc;stroke-width:2;stroke-dasharray:2 5}
+.lm .q{font-size:13px;font-weight:700;fill:#b54708;text-anchor:middle}
+.lm .warn{font-size:12px;font-weight:700;fill:#b54708;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:4px}
+.lm .cut{font-size:18px;font-weight:700;fill:#d92d20;text-anchor:middle}
+.lm .flow{font-size:12px;fill:#52606d;text-anchor:middle}
+.lm .sel{stroke:#f08c00 !important;stroke-width:3.5 !important;stroke-dasharray:none !important}
+.lm text.sel{fill:#f08c00;stroke:none !important}
+</style><rect width="100%" height="100%" fill="#fff"/><rect class="strip" x="210" y="101" width="392" height="30"/><line class="stripedge" x1="210" y1="101" x2="602" y2="101"/><line class="stripedge" x1="210" y1="131" x2="602" y2="131"/><rect class="strip" x="210" y="381" width="392" height="30"/><line class="stripedge" x1="210" y1="381" x2="602" y2="381"/><line class="stripedge" x1="210" y1="411" x2="602" y2="411"/><rect class="strip" x="210" y="681" width="392" height="30"/><line class="stripedge" x1="210" y1="681" x2="602" y2="681"/><line class="stripedge" x1="210" y1="711" x2="602" y2="711"/><rect class="strip" x="210" y="981" width="392" height="30"/><line class="stripedge" x1="210" y1="981" x2="602" y2="981"/><line class="stripedge" x1="210" y1="1011" x2="602" y2="1011"/><rect class="strip" x="210" y="1281" width="392" height="30"/><line class="stripedge" x1="210" y1="1281" x2="602" y2="1281"/><line class="stripedge" x1="210" y1="1311" x2="602" y2="1311"/><rect class="strip" x="210" y="1581" width="392" height="30"/><line class="stripedge" x1="210" y1="1581" x2="602" y2="1581"/><line class="stripedge" x1="210" y1="1611" x2="602" y2="1611"/><rect class="strip" x="210" y="1881" width="392" height="30"/><line class="stripedge" x1="210" y1="1881" x2="602" y2="1881"/><line class="stripedge" x1="210" y1="1911" x2="602" y2="1911"/><rect class="strip" x="210" y="2181" width="392" height="30"/><line class="stripedge" x1="210" y1="2181" x2="602" y2="2181"/><line class="stripedge" x1="210" y1="2211" x2="602" y2="2211"/><rect class="strip" x="210" y="2595" width="392" height="30"/><line class="stripedge" x1="210" y1="2595" x2="602" y2="2595"/><line class="stripedge" x1="210" y1="2625" x2="602" y2="2625"/><path class="blank" d="M410,204 L410,288"/><path class="blank" d="M410,338 L410,454"/><path class="blank" d="M410,504 L410,588"/><path class="blank" d="M410,638 L410,754"/><path class="blank" d="M410,804 L410,888"/><path class="blank" d="M410,938 L410,1054"/><path class="blank" d="M410,1104 L410,1188"/><path class="blank" d="M410,1238 L410,1354"/><path class="blank" d="M410,1404 L410,1488"/><path class="blank" d="M410,1538 L410,1654"/><path class="blank" d="M410,1704 L410,1788"/><path class="blank" d="M410,1838 L410,1954"/><path class="blank" d="M410,2004 L410,2088"/><path class="blank" d="M410,2138 L410,2254"/><path class="blank" d="M410,2304 L410,2388"/><path class="blank" d="M410,2438 L410,2522"/><rect class="ph" data-line="2" x="370" y="154" width="80" height="50" rx="4"><title>2行目 南行き 順1 四条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="3" x="370" y="288" width="80" height="50" rx="4"><title>3行目 南行き 順2 堀川高辻 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="4" x="370" y="454" width="80" height="50" rx="4"><title>4行目 南行き 順3 堀川高辻 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="5" x="370" y="588" width="80" height="50" rx="4"><title>5行目 南行き 順4 堀川五条 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="6" x="370" y="754" width="80" height="50" rx="4"><title>6行目 南行き 順5 堀川五条 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に「交差点の南側で直進3→2車線」とあるが七条堀川側の記述の可能性もあり要確認</title></rect><rect class="ph" data-line="7" x="370" y="888" width="80" height="50" rx="4"><title>7行目 南行き 順6 七条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="8" x="370" y="1054" width="80" height="50" rx="4"><title>8行目 南行き 順7 七条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料（近畿地方整備局H29）に「南側流出部で直進3→2車線」とある</title></rect><rect class="ph" data-line="9" x="370" y="1188" width="80" height="50" rx="4"><title>9行目 南行き 順8 堀川塩小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に「北側区間で直進3→2車線」「アンダーパスで直進2車線」とある</title></rect><rect class="ph" data-line="10" x="370" y="1354" width="80" height="50" rx="4"><title>10行目 南行き 順9 堀川塩小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="11" x="370" y="1488" width="80" height="50" rx="4"><title>11行目 南行き 順10 八条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料にアンダーパス・直進2車線とある</title></rect><rect class="ph" data-line="12" x="370" y="1654" width="80" height="50" rx="4"><title>12行目 南行き 順11 八条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="13" x="370" y="1788" width="80" height="50" rx="4"><title>13行目 南行き 順12 九条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に右折・左折車線と直進車線を分離する対策実施（令和元年度）とある</title></rect><rect class="ph" data-line="14" x="370" y="1954" width="80" height="50" rx="4"><title>14行目 南行き 順13 九条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 国道1号が屈折する箇所とされる</title></rect><rect class="ph" data-line="15" x="370" y="2088" width="80" height="50" rx="4"><title>15行目 南行き 順14 十条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に九条油小路〜十条油小路で片側3→2車線の減少とある</title></rect><rect class="ph" data-line="16" x="370" y="2254" width="80" height="50" rx="4"><title>16行目 南行き 順15 十条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="17" x="370" y="2388" width="80" height="50" rx="4"><title>17行目 南行き 順16 上鳥羽IC付近 区間中
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="18" x="370" y="2522" width="80" height="50" rx="4"><title>18行目 南行き 順17 久世橋通油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に久世橋通油小路の手前で車線数の減少とある</title></rect><text class="ttl" x="16" y="28">南行き：四条堀川 → 久世橋通油小路</text><text class="cap" x="16" y="48">CSV の並び順（車線1＝画面の左。左右は鏡像）　線の見た目は確度（凡例）</text><text class="flow" x="410" y="68">進行方向 ↓</text><text class="stripname" x="24" y="120">┄ 四条堀川</text><text class="stripname" x="24" y="400">┄ 堀川高辻</text><text class="stripname" x="24" y="700">┄ 堀川五条</text><text class="stripname" x="24" y="1000">┄ 七条堀川</text><text class="stripname" x="24" y="1300">┄ 堀川塩小路</text><text class="stripname" x="24" y="1600">┄ 八条油小路</text><text class="stripname" x="24" y="1900">┄ 九条油小路</text><text class="stripname" x="24" y="2200">┄ 十条油小路</text><text class="stripname" x="24" y="2614">┄ 久世橋通油小路</text><text class="phtext" x="410" y="179">未入力</text><g data-line="2"><title>2行目 南行き 順1 四条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="174">四条堀川</text><rect x="16" y="182" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="194" text-anchor="middle">直後</text><text class="sub" x="56" y="194">確度:不明　2行目</text></g><text class="phtext" x="410" y="313">未入力</text><g data-line="3"><title>3行目 南行き 順2 堀川高辻 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="308">堀川高辻</text><rect x="16" y="316" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="328" text-anchor="middle">手前</text><text class="sub" x="56" y="328">確度:不明　3行目</text></g><text class="phtext" x="410" y="479">未入力</text><g data-line="4"><title>4行目 南行き 順3 堀川高辻 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="474">堀川高辻</text><rect x="16" y="482" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="494" text-anchor="middle">直後</text><text class="sub" x="56" y="494">確度:不明　4行目</text></g><text class="phtext" x="410" y="613">未入力</text><g data-line="5"><title>5行目 南行き 順4 堀川五条 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="608">堀川五条</text><rect x="16" y="616" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="628" text-anchor="middle">手前</text><text class="sub" x="56" y="628">確度:不明　5行目</text></g><text class="phtext" x="410" y="779">未入力</text><g data-line="6"><title>6行目 南行き 順5 堀川五条 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に「交差点の南側で直進3→2車線」とあるが七条堀川側の記述の可能性もあり要確認</title><text class="pt" x="16" y="774">堀川五条</text><rect x="16" y="782" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="794" text-anchor="middle">直後</text><text class="sub" x="56" y="794">確度:不明　6行目</text></g><text class="phtext" x="410" y="913">未入力</text><g data-line="7"><title>7行目 南行き 順6 七条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="908">七条堀川</text><rect x="16" y="916" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="928" text-anchor="middle">手前</text><text class="sub" x="56" y="928">確度:不明　7行目</text></g><text class="phtext" x="410" y="1079">未入力</text><g data-line="8"><title>8行目 南行き 順7 七条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料（近畿地方整備局H29）に「南側流出部で直進3→2車線」とある</title><text class="pt" x="16" y="1074">七条堀川</text><rect x="16" y="1082" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1094" text-anchor="middle">直後</text><text class="sub" x="56" y="1094">確度:不明　8行目</text></g><text class="phtext" x="410" y="1213">未入力</text><g data-line="9"><title>9行目 南行き 順8 堀川塩小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に「北側区間で直進3→2車線」「アンダーパスで直進2車線」とある</title><text class="pt" x="16" y="1208">堀川塩小路</text><rect x="16" y="1216" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1228" text-anchor="middle">手前</text><text class="sub" x="56" y="1228">確度:不明　9行目</text></g><text class="phtext" x="410" y="1379">未入力</text><g data-line="10"><title>10行目 南行き 順9 堀川塩小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1374">堀川塩小路</text><rect x="16" y="1382" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1394" text-anchor="middle">直後</text><text class="sub" x="56" y="1394">確度:不明　10行目</text></g><text class="phtext" x="410" y="1513">未入力</text><g data-line="11"><title>11行目 南行き 順10 八条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料にアンダーパス・直進2車線とある</title><text class="pt" x="16" y="1508">八条油小路</text><rect x="16" y="1516" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1528" text-anchor="middle">手前</text><text class="sub" x="56" y="1528">確度:不明　11行目</text></g><text class="phtext" x="410" y="1679">未入力</text><g data-line="12"><title>12行目 南行き 順11 八条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1674">八条油小路</text><rect x="16" y="1682" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1694" text-anchor="middle">直後</text><text class="sub" x="56" y="1694">確度:不明　12行目</text></g><text class="phtext" x="410" y="1813">未入力</text><g data-line="13"><title>13行目 南行き 順12 九条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に右折・左折車線と直進車線を分離する対策実施（令和元年度）とある</title><text class="pt" x="16" y="1808">九条油小路</text><rect x="16" y="1816" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1828" text-anchor="middle">手前</text><text class="sub" x="56" y="1828">確度:不明　13行目</text></g><text class="phtext" x="410" y="1979">未入力</text><g data-line="14"><title>14行目 南行き 順13 九条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 国道1号が屈折する箇所とされる</title><text class="pt" x="16" y="1974">九条油小路</text><rect x="16" y="1982" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1994" text-anchor="middle">直後</text><text class="sub" x="56" y="1994">確度:不明　14行目</text></g><text class="phtext" x="410" y="2113">未入力</text><g data-line="15"><title>15行目 南行き 順14 十条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に九条油小路〜十条油小路で片側3→2車線の減少とある</title><text class="pt" x="16" y="2108">十条油小路</text><rect x="16" y="2116" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="2128" text-anchor="middle">手前</text><text class="sub" x="56" y="2128">確度:不明　15行目</text></g><text class="phtext" x="410" y="2279">未入力</text><g data-line="16"><title>16行目 南行き 順15 十条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2274">十条油小路</text><rect x="16" y="2282" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="2294" text-anchor="middle">直後</text><text class="sub" x="56" y="2294">確度:不明　16行目</text></g><text class="phtext" x="410" y="2413">未入力</text><g data-line="17"><title>17行目 南行き 順16 上鳥羽IC付近 区間中
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2408">上鳥羽IC付近</text><rect x="16" y="2416" width="46" height="16" rx="3" fill="#6b7280"/><text class="badge" x="39.0" y="2428" text-anchor="middle">区間中</text><text class="sub" x="68" y="2428">確度:不明　17行目</text></g><text class="phtext" x="410" y="2547">未入力</text><g data-line="18"><title>18行目 南行き 順17 久世橋通油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —
+メモ: 資料に久世橋通油小路の手前で車線数の減少とある</title><text class="pt" x="16" y="2542">久世橋通油小路</text><rect x="16" y="2550" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="2562" text-anchor="middle">手前</text><text class="sub" x="56" y="2562">確度:不明　18行目</text></g></svg></div><div class="pane card" data-dir="北行き" data-view="map"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="610" height="2672" viewBox="0 0 610 2672" data-direction="北行き" data-view="map"><style>
+.lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
+.lm .ttl{font-size:17px;font-weight:700}
+.lm .cap{font-size:12px;fill:#52606d}
+.lm .pt{font-size:14px;font-weight:700}
+.lm .sub{font-size:11px;fill:#52606d}
+.lm .badge{font-size:11px;font-weight:700;fill:#fff}
+.lm .strip{fill:#e9ecef}
+.lm .stripedge{stroke:#adb5bd;stroke-width:1}
+.lm .stripname{font-size:12px;fill:#495057;font-weight:700}
+.lm .stop{stroke:#1f2933;stroke-width:3.5}
+.lm .ln,.lm .rb{stroke-width:1.5}
+.lm .ln.c-k,.lm .rb.c-k{fill:#2f5f98;stroke:#2f5f98}
+.lm .ln.c-s,.lm .rb.c-s{fill:#a8c0df;stroke:#87a6cf}
+.lm .ln.c-p,.lm .rb.c-p{fill:#e7eef8;stroke:#2f5f98;stroke-dasharray:5 3}
+.lm .ln.c-u,.lm .rb.c-u{fill:#f3f3f3;stroke:#9aa0a6;stroke-dasharray:1.5 3}
+.lm .ln.bad{stroke:#d92d20;stroke-width:2.5;stroke-dasharray:none}
+.lm .ex{fill:none;stroke-width:12}
+.lm .ex.c-k{stroke:#2f5f98}.lm .ex.c-s{stroke:#a8c0df}
+.lm .ex.c-p{stroke:#2f5f98;stroke-dasharray:7 5}.lm .ex.c-u{stroke:#9aa0a6;stroke-dasharray:2 4}
+.lm .ah.c-k,.lm .ah.c-p{fill:#2f5f98}.lm .ah.c-s{fill:#a8c0df}.lm .ah.c-u{fill:#9aa0a6}
+.lm .gl{font-size:20px;text-anchor:middle;dominant-baseline:central;fill:#17324d}
+.lm .gl.on-k{fill:#fff}.lm .gl.on-u{fill:#5f6368}
+.lm .gl.t2{font-size:15px}.lm .gl.t3{font-size:12px}.lm .gl.bus{font-size:12px;font-weight:700}
+.lm .exname{font-size:12px;font-weight:700;fill:#1f2933;paint-order:stroke;stroke:#fff;stroke-width:3px}
+.lm .ph{fill:#fafafa;stroke:#9aa0a6;stroke-width:1.2;stroke-dasharray:2 3}
+.lm .phtext{font-size:12px;fill:#7b8794;text-anchor:middle;dominant-baseline:central}
+.lm .stub{fill:none;stroke:#9aa0a6;stroke-width:3;stroke-dasharray:3 3}
+.lm .blank{fill:none;stroke:#c3c7cc;stroke-width:2;stroke-dasharray:2 5}
+.lm .q{font-size:13px;font-weight:700;fill:#b54708;text-anchor:middle}
+.lm .warn{font-size:12px;font-weight:700;fill:#b54708;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:4px}
+.lm .cut{font-size:18px;font-weight:700;fill:#d92d20;text-anchor:middle}
+.lm .flow{font-size:12px;fill:#52606d;text-anchor:middle}
+.lm .sel{stroke:#f08c00 !important;stroke-width:3.5 !important;stroke-dasharray:none !important}
+.lm text.sel{fill:#f08c00;stroke:none !important}
+</style><rect width="100%" height="100%" fill="#fff"/><rect class="strip" x="210" y="101" width="392" height="30"/><line class="stripedge" x1="210" y1="101" x2="602" y2="101"/><line class="stripedge" x1="210" y1="131" x2="602" y2="131"/><rect class="strip" x="210" y="515" width="392" height="30"/><line class="stripedge" x1="210" y1="515" x2="602" y2="515"/><line class="stripedge" x1="210" y1="545" x2="602" y2="545"/><rect class="strip" x="210" y="815" width="392" height="30"/><line class="stripedge" x1="210" y1="815" x2="602" y2="815"/><line class="stripedge" x1="210" y1="845" x2="602" y2="845"/><rect class="strip" x="210" y="1115" width="392" height="30"/><line class="stripedge" x1="210" y1="1115" x2="602" y2="1115"/><line class="stripedge" x1="210" y1="1145" x2="602" y2="1145"/><rect class="strip" x="210" y="1415" width="392" height="30"/><line class="stripedge" x1="210" y1="1415" x2="602" y2="1415"/><line class="stripedge" x1="210" y1="1445" x2="602" y2="1445"/><rect class="strip" x="210" y="1715" width="392" height="30"/><line class="stripedge" x1="210" y1="1715" x2="602" y2="1715"/><line class="stripedge" x1="210" y1="1745" x2="602" y2="1745"/><rect class="strip" x="210" y="2015" width="392" height="30"/><line class="stripedge" x1="210" y1="2015" x2="602" y2="2015"/><line class="stripedge" x1="210" y1="2045" x2="602" y2="2045"/><rect class="strip" x="210" y="2315" width="392" height="30"/><line class="stripedge" x1="210" y1="2315" x2="602" y2="2315"/><line class="stripedge" x1="210" y1="2345" x2="602" y2="2345"/><rect class="strip" x="210" y="2595" width="392" height="30"/><line class="stripedge" x1="210" y1="2595" x2="602" y2="2595"/><line class="stripedge" x1="210" y1="2625" x2="602" y2="2625"/><path class="blank" d="M410,204 L410,288"/><path class="blank" d="M410,338 L410,422"/><path class="blank" d="M410,472 L410,588"/><path class="blank" d="M410,638 L410,722"/><path class="blank" d="M410,772 L410,888"/><path class="blank" d="M410,938 L410,1022"/><path class="blank" d="M410,1072 L410,1188"/><path class="blank" d="M410,1238 L410,1322"/><path class="blank" d="M410,1372 L410,1488"/><path class="blank" d="M410,1538 L410,1622"/><path class="blank" d="M410,1672 L410,1788"/><path class="blank" d="M410,1838 L410,1922"/><path class="blank" d="M410,1972 L410,2088"/><path class="blank" d="M410,2138 L410,2222"/><path class="blank" d="M410,2272 L410,2388"/><path class="blank" d="M410,2438 L410,2522"/><rect class="ph" data-line="19" x="370" y="154" width="80" height="50" rx="4"><title>19行目 北行き 順1 久世橋通油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="20" x="370" y="288" width="80" height="50" rx="4"><title>20行目 北行き 順2 上鳥羽IC付近 区間中
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="21" x="370" y="422" width="80" height="50" rx="4"><title>21行目 北行き 順3 十条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="22" x="370" y="588" width="80" height="50" rx="4"><title>22行目 北行き 順4 十条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="23" x="370" y="722" width="80" height="50" rx="4"><title>23行目 北行き 順5 九条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="24" x="370" y="888" width="80" height="50" rx="4"><title>24行目 北行き 順6 九条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="25" x="370" y="1022" width="80" height="50" rx="4"><title>25行目 北行き 順7 八条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="26" x="370" y="1188" width="80" height="50" rx="4"><title>26行目 北行き 順8 八条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="27" x="370" y="1322" width="80" height="50" rx="4"><title>27行目 北行き 順9 堀川塩小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="28" x="370" y="1488" width="80" height="50" rx="4"><title>28行目 北行き 順10 堀川塩小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="29" x="370" y="1622" width="80" height="50" rx="4"><title>29行目 北行き 順11 七条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="30" x="370" y="1788" width="80" height="50" rx="4"><title>30行目 北行き 順12 七条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="31" x="370" y="1922" width="80" height="50" rx="4"><title>31行目 北行き 順13 堀川五条 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="32" x="370" y="2088" width="80" height="50" rx="4"><title>32行目 北行き 順14 堀川五条 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="33" x="370" y="2222" width="80" height="50" rx="4"><title>33行目 北行き 順15 堀川高辻 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="34" x="370" y="2388" width="80" height="50" rx="4"><title>34行目 北行き 順16 堀川高辻 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="35" x="370" y="2522" width="80" height="50" rx="4"><title>35行目 北行き 順17 四条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><text class="ttl" x="16" y="28">北行き：久世橋通油小路 → 四条堀川</text><text class="cap" x="16" y="48">上空から見た向き（運転者の左＝画面の右）　線の見た目は確度（凡例）</text><text class="flow" x="410" y="68">進行方向 ↓</text><text class="stripname" x="24" y="120">┄ 久世橋通油小路</text><text class="stripname" x="24" y="534">┄ 十条油小路</text><text class="stripname" x="24" y="834">┄ 九条油小路</text><text class="stripname" x="24" y="1134">┄ 八条油小路</text><text class="stripname" x="24" y="1434">┄ 堀川塩小路</text><text class="stripname" x="24" y="1734">┄ 七条堀川</text><text class="stripname" x="24" y="2034">┄ 堀川五条</text><text class="stripname" x="24" y="2334">┄ 堀川高辻</text><text class="stripname" x="24" y="2614">┄ 四条堀川</text><text class="phtext" x="410" y="179">未入力</text><g data-line="19"><title>19行目 北行き 順1 久世橋通油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="174">久世橋通油小路</text><rect x="16" y="182" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="194" text-anchor="middle">直後</text><text class="sub" x="56" y="194">確度:不明　19行目</text></g><text class="phtext" x="410" y="313">未入力</text><g data-line="20"><title>20行目 北行き 順2 上鳥羽IC付近 区間中
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="308">上鳥羽IC付近</text><rect x="16" y="316" width="46" height="16" rx="3" fill="#6b7280"/><text class="badge" x="39.0" y="328" text-anchor="middle">区間中</text><text class="sub" x="68" y="328">確度:不明　20行目</text></g><text class="phtext" x="410" y="447">未入力</text><g data-line="21"><title>21行目 北行き 順3 十条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="442">十条油小路</text><rect x="16" y="450" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="462" text-anchor="middle">手前</text><text class="sub" x="56" y="462">確度:不明　21行目</text></g><text class="phtext" x="410" y="613">未入力</text><g data-line="22"><title>22行目 北行き 順4 十条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="608">十条油小路</text><rect x="16" y="616" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="628" text-anchor="middle">直後</text><text class="sub" x="56" y="628">確度:不明　22行目</text></g><text class="phtext" x="410" y="747">未入力</text><g data-line="23"><title>23行目 北行き 順5 九条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="742">九条油小路</text><rect x="16" y="750" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="762" text-anchor="middle">手前</text><text class="sub" x="56" y="762">確度:不明　23行目</text></g><text class="phtext" x="410" y="913">未入力</text><g data-line="24"><title>24行目 北行き 順6 九条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="908">九条油小路</text><rect x="16" y="916" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="928" text-anchor="middle">直後</text><text class="sub" x="56" y="928">確度:不明　24行目</text></g><text class="phtext" x="410" y="1047">未入力</text><g data-line="25"><title>25行目 北行き 順7 八条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1042">八条油小路</text><rect x="16" y="1050" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1062" text-anchor="middle">手前</text><text class="sub" x="56" y="1062">確度:不明　25行目</text></g><text class="phtext" x="410" y="1213">未入力</text><g data-line="26"><title>26行目 北行き 順8 八条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1208">八条油小路</text><rect x="16" y="1216" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1228" text-anchor="middle">直後</text><text class="sub" x="56" y="1228">確度:不明　26行目</text></g><text class="phtext" x="410" y="1347">未入力</text><g data-line="27"><title>27行目 北行き 順9 堀川塩小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1342">堀川塩小路</text><rect x="16" y="1350" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1362" text-anchor="middle">手前</text><text class="sub" x="56" y="1362">確度:不明　27行目</text></g><text class="phtext" x="410" y="1513">未入力</text><g data-line="28"><title>28行目 北行き 順10 堀川塩小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1508">堀川塩小路</text><rect x="16" y="1516" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1528" text-anchor="middle">直後</text><text class="sub" x="56" y="1528">確度:不明　28行目</text></g><text class="phtext" x="410" y="1647">未入力</text><g data-line="29"><title>29行目 北行き 順11 七条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1642">七条堀川</text><rect x="16" y="1650" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1662" text-anchor="middle">手前</text><text class="sub" x="56" y="1662">確度:不明　29行目</text></g><text class="phtext" x="410" y="1813">未入力</text><g data-line="30"><title>30行目 北行き 順12 七条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1808">七条堀川</text><rect x="16" y="1816" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1828" text-anchor="middle">直後</text><text class="sub" x="56" y="1828">確度:不明　30行目</text></g><text class="phtext" x="410" y="1947">未入力</text><g data-line="31"><title>31行目 北行き 順13 堀川五条 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1942">堀川五条</text><rect x="16" y="1950" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1962" text-anchor="middle">手前</text><text class="sub" x="56" y="1962">確度:不明　31行目</text></g><text class="phtext" x="410" y="2113">未入力</text><g data-line="32"><title>32行目 北行き 順14 堀川五条 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2108">堀川五条</text><rect x="16" y="2116" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="2128" text-anchor="middle">直後</text><text class="sub" x="56" y="2128">確度:不明　32行目</text></g><text class="phtext" x="410" y="2247">未入力</text><g data-line="33"><title>33行目 北行き 順15 堀川高辻 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2242">堀川高辻</text><rect x="16" y="2250" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="2262" text-anchor="middle">手前</text><text class="sub" x="56" y="2262">確度:不明　33行目</text></g><text class="phtext" x="410" y="2413">未入力</text><g data-line="34"><title>34行目 北行き 順16 堀川高辻 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2408">堀川高辻</text><rect x="16" y="2416" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="2428" text-anchor="middle">直後</text><text class="sub" x="56" y="2428">確度:不明　34行目</text></g><text class="phtext" x="410" y="2547">未入力</text><g data-line="35"><title>35行目 北行き 順17 四条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2542">四条堀川</text><rect x="16" y="2550" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="2562" text-anchor="middle">手前</text><text class="sub" x="56" y="2562">確度:不明　35行目</text></g></svg></div><div class="pane card" data-dir="北行き" data-view="csv"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="610" height="2672" viewBox="0 0 610 2672" data-direction="北行き" data-view="csv"><style>
+.lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
+.lm .ttl{font-size:17px;font-weight:700}
+.lm .cap{font-size:12px;fill:#52606d}
+.lm .pt{font-size:14px;font-weight:700}
+.lm .sub{font-size:11px;fill:#52606d}
+.lm .badge{font-size:11px;font-weight:700;fill:#fff}
+.lm .strip{fill:#e9ecef}
+.lm .stripedge{stroke:#adb5bd;stroke-width:1}
+.lm .stripname{font-size:12px;fill:#495057;font-weight:700}
+.lm .stop{stroke:#1f2933;stroke-width:3.5}
+.lm .ln,.lm .rb{stroke-width:1.5}
+.lm .ln.c-k,.lm .rb.c-k{fill:#2f5f98;stroke:#2f5f98}
+.lm .ln.c-s,.lm .rb.c-s{fill:#a8c0df;stroke:#87a6cf}
+.lm .ln.c-p,.lm .rb.c-p{fill:#e7eef8;stroke:#2f5f98;stroke-dasharray:5 3}
+.lm .ln.c-u,.lm .rb.c-u{fill:#f3f3f3;stroke:#9aa0a6;stroke-dasharray:1.5 3}
+.lm .ln.bad{stroke:#d92d20;stroke-width:2.5;stroke-dasharray:none}
+.lm .ex{fill:none;stroke-width:12}
+.lm .ex.c-k{stroke:#2f5f98}.lm .ex.c-s{stroke:#a8c0df}
+.lm .ex.c-p{stroke:#2f5f98;stroke-dasharray:7 5}.lm .ex.c-u{stroke:#9aa0a6;stroke-dasharray:2 4}
+.lm .ah.c-k,.lm .ah.c-p{fill:#2f5f98}.lm .ah.c-s{fill:#a8c0df}.lm .ah.c-u{fill:#9aa0a6}
+.lm .gl{font-size:20px;text-anchor:middle;dominant-baseline:central;fill:#17324d}
+.lm .gl.on-k{fill:#fff}.lm .gl.on-u{fill:#5f6368}
+.lm .gl.t2{font-size:15px}.lm .gl.t3{font-size:12px}.lm .gl.bus{font-size:12px;font-weight:700}
+.lm .exname{font-size:12px;font-weight:700;fill:#1f2933;paint-order:stroke;stroke:#fff;stroke-width:3px}
+.lm .ph{fill:#fafafa;stroke:#9aa0a6;stroke-width:1.2;stroke-dasharray:2 3}
+.lm .phtext{font-size:12px;fill:#7b8794;text-anchor:middle;dominant-baseline:central}
+.lm .stub{fill:none;stroke:#9aa0a6;stroke-width:3;stroke-dasharray:3 3}
+.lm .blank{fill:none;stroke:#c3c7cc;stroke-width:2;stroke-dasharray:2 5}
+.lm .q{font-size:13px;font-weight:700;fill:#b54708;text-anchor:middle}
+.lm .warn{font-size:12px;font-weight:700;fill:#b54708;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:4px}
+.lm .cut{font-size:18px;font-weight:700;fill:#d92d20;text-anchor:middle}
+.lm .flow{font-size:12px;fill:#52606d;text-anchor:middle}
+.lm .sel{stroke:#f08c00 !important;stroke-width:3.5 !important;stroke-dasharray:none !important}
+.lm text.sel{fill:#f08c00;stroke:none !important}
+</style><rect width="100%" height="100%" fill="#fff"/><rect class="strip" x="210" y="101" width="392" height="30"/><line class="stripedge" x1="210" y1="101" x2="602" y2="101"/><line class="stripedge" x1="210" y1="131" x2="602" y2="131"/><rect class="strip" x="210" y="515" width="392" height="30"/><line class="stripedge" x1="210" y1="515" x2="602" y2="515"/><line class="stripedge" x1="210" y1="545" x2="602" y2="545"/><rect class="strip" x="210" y="815" width="392" height="30"/><line class="stripedge" x1="210" y1="815" x2="602" y2="815"/><line class="stripedge" x1="210" y1="845" x2="602" y2="845"/><rect class="strip" x="210" y="1115" width="392" height="30"/><line class="stripedge" x1="210" y1="1115" x2="602" y2="1115"/><line class="stripedge" x1="210" y1="1145" x2="602" y2="1145"/><rect class="strip" x="210" y="1415" width="392" height="30"/><line class="stripedge" x1="210" y1="1415" x2="602" y2="1415"/><line class="stripedge" x1="210" y1="1445" x2="602" y2="1445"/><rect class="strip" x="210" y="1715" width="392" height="30"/><line class="stripedge" x1="210" y1="1715" x2="602" y2="1715"/><line class="stripedge" x1="210" y1="1745" x2="602" y2="1745"/><rect class="strip" x="210" y="2015" width="392" height="30"/><line class="stripedge" x1="210" y1="2015" x2="602" y2="2015"/><line class="stripedge" x1="210" y1="2045" x2="602" y2="2045"/><rect class="strip" x="210" y="2315" width="392" height="30"/><line class="stripedge" x1="210" y1="2315" x2="602" y2="2315"/><line class="stripedge" x1="210" y1="2345" x2="602" y2="2345"/><rect class="strip" x="210" y="2595" width="392" height="30"/><line class="stripedge" x1="210" y1="2595" x2="602" y2="2595"/><line class="stripedge" x1="210" y1="2625" x2="602" y2="2625"/><path class="blank" d="M410,204 L410,288"/><path class="blank" d="M410,338 L410,422"/><path class="blank" d="M410,472 L410,588"/><path class="blank" d="M410,638 L410,722"/><path class="blank" d="M410,772 L410,888"/><path class="blank" d="M410,938 L410,1022"/><path class="blank" d="M410,1072 L410,1188"/><path class="blank" d="M410,1238 L410,1322"/><path class="blank" d="M410,1372 L410,1488"/><path class="blank" d="M410,1538 L410,1622"/><path class="blank" d="M410,1672 L410,1788"/><path class="blank" d="M410,1838 L410,1922"/><path class="blank" d="M410,1972 L410,2088"/><path class="blank" d="M410,2138 L410,2222"/><path class="blank" d="M410,2272 L410,2388"/><path class="blank" d="M410,2438 L410,2522"/><rect class="ph" data-line="19" x="370" y="154" width="80" height="50" rx="4"><title>19行目 北行き 順1 久世橋通油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="20" x="370" y="288" width="80" height="50" rx="4"><title>20行目 北行き 順2 上鳥羽IC付近 区間中
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="21" x="370" y="422" width="80" height="50" rx="4"><title>21行目 北行き 順3 十条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="22" x="370" y="588" width="80" height="50" rx="4"><title>22行目 北行き 順4 十条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="23" x="370" y="722" width="80" height="50" rx="4"><title>23行目 北行き 順5 九条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="24" x="370" y="888" width="80" height="50" rx="4"><title>24行目 北行き 順6 九条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="25" x="370" y="1022" width="80" height="50" rx="4"><title>25行目 北行き 順7 八条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="26" x="370" y="1188" width="80" height="50" rx="4"><title>26行目 北行き 順8 八条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="27" x="370" y="1322" width="80" height="50" rx="4"><title>27行目 北行き 順9 堀川塩小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="28" x="370" y="1488" width="80" height="50" rx="4"><title>28行目 北行き 順10 堀川塩小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="29" x="370" y="1622" width="80" height="50" rx="4"><title>29行目 北行き 順11 七条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="30" x="370" y="1788" width="80" height="50" rx="4"><title>30行目 北行き 順12 七条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="31" x="370" y="1922" width="80" height="50" rx="4"><title>31行目 北行き 順13 堀川五条 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="32" x="370" y="2088" width="80" height="50" rx="4"><title>32行目 北行き 順14 堀川五条 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="33" x="370" y="2222" width="80" height="50" rx="4"><title>33行目 北行き 順15 堀川高辻 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="34" x="370" y="2388" width="80" height="50" rx="4"><title>34行目 北行き 順16 堀川高辻 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><rect class="ph" data-line="35" x="370" y="2522" width="80" height="50" rx="4"><title>35行目 北行き 順17 四条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title></rect><text class="ttl" x="16" y="28">北行き：久世橋通油小路 → 四条堀川</text><text class="cap" x="16" y="48">CSV の並び順（車線1＝画面の左。左右は鏡像）　線の見た目は確度（凡例）</text><text class="flow" x="410" y="68">進行方向 ↓</text><text class="stripname" x="24" y="120">┄ 久世橋通油小路</text><text class="stripname" x="24" y="534">┄ 十条油小路</text><text class="stripname" x="24" y="834">┄ 九条油小路</text><text class="stripname" x="24" y="1134">┄ 八条油小路</text><text class="stripname" x="24" y="1434">┄ 堀川塩小路</text><text class="stripname" x="24" y="1734">┄ 七条堀川</text><text class="stripname" x="24" y="2034">┄ 堀川五条</text><text class="stripname" x="24" y="2334">┄ 堀川高辻</text><text class="stripname" x="24" y="2614">┄ 四条堀川</text><text class="phtext" x="410" y="179">未入力</text><g data-line="19"><title>19行目 北行き 順1 久世橋通油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="174">久世橋通油小路</text><rect x="16" y="182" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="194" text-anchor="middle">直後</text><text class="sub" x="56" y="194">確度:不明　19行目</text></g><text class="phtext" x="410" y="313">未入力</text><g data-line="20"><title>20行目 北行き 順2 上鳥羽IC付近 区間中
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="308">上鳥羽IC付近</text><rect x="16" y="316" width="46" height="16" rx="3" fill="#6b7280"/><text class="badge" x="39.0" y="328" text-anchor="middle">区間中</text><text class="sub" x="68" y="328">確度:不明　20行目</text></g><text class="phtext" x="410" y="447">未入力</text><g data-line="21"><title>21行目 北行き 順3 十条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="442">十条油小路</text><rect x="16" y="450" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="462" text-anchor="middle">手前</text><text class="sub" x="56" y="462">確度:不明　21行目</text></g><text class="phtext" x="410" y="613">未入力</text><g data-line="22"><title>22行目 北行き 順4 十条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="608">十条油小路</text><rect x="16" y="616" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="628" text-anchor="middle">直後</text><text class="sub" x="56" y="628">確度:不明　22行目</text></g><text class="phtext" x="410" y="747">未入力</text><g data-line="23"><title>23行目 北行き 順5 九条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="742">九条油小路</text><rect x="16" y="750" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="762" text-anchor="middle">手前</text><text class="sub" x="56" y="762">確度:不明　23行目</text></g><text class="phtext" x="410" y="913">未入力</text><g data-line="24"><title>24行目 北行き 順6 九条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="908">九条油小路</text><rect x="16" y="916" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="928" text-anchor="middle">直後</text><text class="sub" x="56" y="928">確度:不明　24行目</text></g><text class="phtext" x="410" y="1047">未入力</text><g data-line="25"><title>25行目 北行き 順7 八条油小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1042">八条油小路</text><rect x="16" y="1050" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1062" text-anchor="middle">手前</text><text class="sub" x="56" y="1062">確度:不明　25行目</text></g><text class="phtext" x="410" y="1213">未入力</text><g data-line="26"><title>26行目 北行き 順8 八条油小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1208">八条油小路</text><rect x="16" y="1216" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1228" text-anchor="middle">直後</text><text class="sub" x="56" y="1228">確度:不明　26行目</text></g><text class="phtext" x="410" y="1347">未入力</text><g data-line="27"><title>27行目 北行き 順9 堀川塩小路 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1342">堀川塩小路</text><rect x="16" y="1350" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1362" text-anchor="middle">手前</text><text class="sub" x="56" y="1362">確度:不明　27行目</text></g><text class="phtext" x="410" y="1513">未入力</text><g data-line="28"><title>28行目 北行き 順10 堀川塩小路 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1508">堀川塩小路</text><rect x="16" y="1516" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1528" text-anchor="middle">直後</text><text class="sub" x="56" y="1528">確度:不明　28行目</text></g><text class="phtext" x="410" y="1647">未入力</text><g data-line="29"><title>29行目 北行き 順11 七条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1642">七条堀川</text><rect x="16" y="1650" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1662" text-anchor="middle">手前</text><text class="sub" x="56" y="1662">確度:不明　29行目</text></g><text class="phtext" x="410" y="1813">未入力</text><g data-line="30"><title>30行目 北行き 順12 七条堀川 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1808">七条堀川</text><rect x="16" y="1816" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="1828" text-anchor="middle">直後</text><text class="sub" x="56" y="1828">確度:不明　30行目</text></g><text class="phtext" x="410" y="1947">未入力</text><g data-line="31"><title>31行目 北行き 順13 堀川五条 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="1942">堀川五条</text><rect x="16" y="1950" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="1962" text-anchor="middle">手前</text><text class="sub" x="56" y="1962">確度:不明　31行目</text></g><text class="phtext" x="410" y="2113">未入力</text><g data-line="32"><title>32行目 北行き 順14 堀川五条 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2108">堀川五条</text><rect x="16" y="2116" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="2128" text-anchor="middle">直後</text><text class="sub" x="56" y="2128">確度:不明　32行目</text></g><text class="phtext" x="410" y="2247">未入力</text><g data-line="33"><title>33行目 北行き 順15 堀川高辻 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2242">堀川高辻</text><rect x="16" y="2250" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="2262" text-anchor="middle">手前</text><text class="sub" x="56" y="2262">確度:不明　33行目</text></g><text class="phtext" x="410" y="2413">未入力</text><g data-line="34"><title>34行目 北行き 順16 堀川高辻 直後
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2408">堀川高辻</text><rect x="16" y="2416" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="2428" text-anchor="middle">直後</text><text class="sub" x="56" y="2428">確度:不明　34行目</text></g><text class="phtext" x="410" y="2547">未入力</text><g data-line="35"><title>35行目 北行き 順17 四条堀川 手前
+車線: 未入力
+接続: （空欄）
+確度: 不明
+出典: —</title><text class="pt" x="16" y="2542">四条堀川</text><rect x="16" y="2550" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="2562" text-anchor="middle">手前</text><text class="sub" x="56" y="2562">確度:不明　35行目</text></g></svg></div>
+<section class="lint card" data-dir="南行き"><h2>検証結果（南行き）</h2><ul><li class="lv-警告">[警告] 全体 [南行き]: 車線が未入力の行が 17/17 行あります（2-18行目）</li></ul></section><section class="lint card" data-dir="北行き"><h2>検証結果（北行き）</h2><ul><li class="lv-警告">[警告] 全体 [北行き]: 車線が未入力の行が 17/17 行あります（19-35行目）</li></ul></section>
+</main>
+<script>
+(function(){
+  var dir = document.body.dataset.dir, view = 'map';
+  function apply(){
+    document.querySelectorAll('.pane').forEach(function(p){
+      p.hidden = !(p.dataset.dir === dir && p.dataset.view === view);});
+    document.querySelectorAll('.lint').forEach(function(p){ p.hidden = p.dataset.dir !== dir; });
+    document.querySelectorAll('[data-set-dir]').forEach(function(b){ b.classList.toggle('on', b.dataset.setDir === dir); });
+    document.querySelectorAll('[data-set-view]').forEach(function(b){ b.classList.toggle('on', b.dataset.setView === view); });
+  }
+  document.querySelectorAll('[data-set-dir]').forEach(function(b){ b.onclick = function(){ dir = b.dataset.setDir; apply(); }; });
+  document.querySelectorAll('[data-set-view]').forEach(function(b){ b.onclick = function(){ view = b.dataset.setView; apply(); }; });
+  apply();
+})();
+</script>
+</body></html>
