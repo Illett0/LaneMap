@@ -551,8 +551,9 @@ CONF_TEXT = {"確": "確", "資": "資", "推": "推", "": "不明"}
 GLYPH = {"L": "↰", "S": "↑", "R": "↱", "SL": "↰↑", "SR": "↑↱", "LSR": "↰↑↱"}
 KIND_COLOR = {"手前": "#c2410c", "直後": "#0f766e", "区間中": "#6b7280"}
 VIEW_CAPTION = {
-    "map": "上空から見た向き（運転者の左＝画面の右）",
+    "map": "上空から見た向き（北が上。運転者の左＝画面の右）",
     "csv": "CSV の並び順（車線1＝画面の左。左右は鏡像）",
+    "up": "北が上。下から上へ進む（運転者の左＝画面の左。どちらの向きでも同じ図）",
 }
 
 SVG_STYLE = """<style>
@@ -701,7 +702,11 @@ def _row_tip(row: Row, extra: str = "") -> str:
 
 
 def render_svg(route: Route, view: str = "map") -> str:
-    """1方向分の車線接続図を SVG で返す。view は map（上空から見た向き）か csv（CSV の並び順）。"""
+    """1方向分の車線接続図を SVG で返す。view は map（上空から見た向き）か csv（CSV の並び順）。
+
+    北が上になるように、南行きは上から下へ、北行きは下から上へ進む図にする。
+    北行きは運転者の左が画面の左になるので、view によらず同じ図になる。
+    """
     rows, trans = route.rows, route.transitions
     if not rows:
         return (f'<svg class="lm" xmlns="http://www.w3.org/2000/svg" width="480" height="70" '
@@ -709,7 +714,13 @@ def render_svg(route: Route, view: str = "map") -> str:
                 f'{_e(route.direction)}：行がありません</text></svg>')
     L = _layout(route)
     P, LW = G.pitch(), G.LW
-    mirror = view == "map"
+    up = route.direction == "北行き"
+    mirror = view == "map" and not up
+    # 北行きは図形を上下反転する。文字は反転させず、位置だけ Y() で読み替えて置く
+    K = G.TOP + L.height - G.BOTTOM
+
+    def Y(y: float) -> float:
+        return K - y if up else y
 
     def sx(x: float) -> float:
         return 2 * L.cx - x if mirror else x
@@ -729,14 +740,15 @@ def render_svg(route: Route, view: str = "map") -> str:
         return 1 if left == mirror else -1
 
     road_l, road_r = L.x0, L.x0 + L.road_w
-    bg, fg, labels = [], [], []
+    bg, fg, labels, glyphs = [], [], [], []
 
     # ---- 見出し
     labels.append(f'<text class="ttl" x="16" y="28">{_e(route.direction)}：'
                   f'{_e(rows[0].point)} → {_e(rows[-1].point)}</text>')
-    labels.append(f'<text class="cap" x="16" y="48">{_e(VIEW_CAPTION[view])}　'
-                  f'線の見た目は確度（凡例）</text>')
-    labels.append(f'<text class="flow" x="{_f(L.cx)}" y="{_f(G.TOP - 10)}">進行方向 ↓</text>')
+    caption = VIEW_CAPTION["up"] if up else VIEW_CAPTION[view]
+    labels.append(f'<text class="cap" x="16" y="48">{_e(caption)}　線の見た目は確度（凡例）</text>')
+    labels.append(f'<text class="flow" x="{_f(L.cx)}" y="{_f(G.TOP - 10)}">'
+                  f'{"進行方向 ↑（下から上へ）" if up else "進行方向 ↓"}</text>')
 
     # ---- 交差点（横の帯）
     # 画面の右が東か: 上空から見た向きの南行き（北が上）と、CSV の並び順の北行き
@@ -762,13 +774,13 @@ def render_svg(route: Route, view: str = "map") -> str:
                 name = east
             else:
                 name = f"東:{east or 'なし'} 西:{west or 'なし'}"
-            labels.append(f'<text class="stripname" x="24" y="{_f(yc + 4)}">┄ {_e(name)}'
+            labels.append(f'<text class="stripname" x="24" y="{_f(Y(yc) + 4)}">┄ {_e(name)}'
                           f'{"" if name == p else "（" + _e(p) + "）"}</text>')
             if sides and east != west:
                 for nm, ew, at_right in ((east, "東", east_right), (west, "西", not east_right)):
                     if nm:
                         x = x2 - 8 if at_right else x1 + 8
-                        labels.append(f'<text class="stripend" x="{_f(x)}" y="{_f(yc + 4)}" '
+                        labels.append(f'<text class="stripend" x="{_f(x)}" y="{_f(Y(yc) + 4)}" '
                                       f'text-anchor="{"end" if at_right else "start"}">'
                                       f'{_e(nm)}（{ew}）</text>')
 
@@ -870,7 +882,7 @@ def render_svg(route: Route, view: str = "map") -> str:
                     if label and label not in labelled:
                         labelled.add(label)
                         anchor = "start" if d_ > 0 else "end"
-                        labels.append(f'<text class="exname" x="{_f(xe + d_ * 19)}" y="{_f(ye + 4)}" '
+                        labels.append(f'<text class="exname" x="{_f(xe + d_ * 19)}" y="{_f(Y(ye) + 4)}" '
                                       f'text-anchor="{anchor}">{_e(label)}</text>')
 
         # 途切れ（x）
@@ -879,7 +891,7 @@ def render_svg(route: Route, view: str = "map") -> str:
                 a1, a2 = span(k, l.src)
                 cx = (a1 + a2) / 2
                 fg.append(f'<path class="stub" d="M{_f(cx)},{_f(y1)} L{_f(cx)},{_f(y1 + 18)}"/>')
-                labels.append(f'<text class="cut" x="{_f(cx)}" y="{_f(y1 + 36)}">×'
+                labels.append(f'<text class="cut" x="{_f(cx)}" y="{_f(Y(y1 + 30) + 6)}">×'
                               f'<title>{row.line}行目 車線{l.src + 1}：行き先を指定せず途切れる</title></text>')
 
         # 行き先が決まらない車線・どこから来たか決まらない車線
@@ -888,15 +900,15 @@ def render_svg(route: Route, view: str = "map") -> str:
                 a1, a2 = span(k, j)
                 cx = (a1 + a2) / 2
                 fg.append(f'<path class="stub" d="M{_f(cx)},{_f(y1)} L{_f(cx)},{_f(y1 + 18)}"/>')
-                labels.append(f'<text class="q" x="{_f(cx)}" y="{_f(y1 + 32)}">?</text>')
+                labels.append(f'<text class="q" x="{_f(cx)}" y="{_f(Y(y1 + 28) + 5)}">?</text>')
             if nxt is not None and nxt.lanes:
                 for dst in t.unknown_origin:
                     b1, b2 = span(k + 1, dst)
                     cx = (b1 + b2) / 2
                     fg.append(f'<path class="stub" d="M{_f(cx)},{_f(y2 - 18)} L{_f(cx)},{_f(y2)}"/>')
-                    labels.append(f'<text class="q" x="{_f(cx)}" y="{_f(y2 - 23)}">?</text>')
+                    labels.append(f'<text class="q" x="{_f(cx)}" y="{_f(Y(y2 - 27) + 5)}">?</text>')
             if nxt is not None:
-                labels.append(f'<text class="warn" x="{_f(L.cx)}" y="{_f(y1 + gh / 2 + 4)}">'
+                labels.append(f'<text class="warn" x="{_f(L.cx)}" y="{_f(Y(y1 + gh / 2) + 4)}">'
                               f'対応未定<title>{tip}</title></text>')
 
     # ---- 行（車線の帯）
@@ -907,35 +919,39 @@ def render_svg(route: Route, view: str = "map") -> str:
             a, b = row_span(k)
             fg.append(f'<rect class="ph" data-line="{row.line}" x="{_f(a)}" y="{_f(y)}" '
                       f'width="{_f(b - a)}" height="{G.ROW_H}" rx="4"><title>{tip}</title></rect>')
-            labels.append(f'<text class="phtext" x="{_f((a + b) / 2)}" y="{_f(y + G.ROW_H / 2)}">'
+            labels.append(f'<text class="phtext" x="{_f((a + b) / 2)}" y="{_f(Y(y + G.ROW_H / 2))}">'
                           f'未入力</text>')
         else:
             cls = CONF_CLASS[row.conf]
             for j, code in enumerate(row.lanes):
                 a1, a2 = span(k, j)
-                cx, cy = (a1 + a2) / 2, y + G.ROW_H / 2
+                cx, cy = (a1 + a2) / 2, Y(y + G.ROW_H / 2)
                 bad = " bad" if j in row.invalid else ""
                 fg.append(f'<rect class="ln c-{cls}{bad}" data-line="{row.line}" x="{_f(a1)}" y="{_f(y)}" '
                           f'width="{LW}" height="{G.ROW_H}" rx="3"><title>車線{j + 1}: {_e(code)}\n'
                           f'{tip}</title></rect>')
                 if code == "B":
-                    fg.append(f'<text class="gl bus on-{cls}" x="{_f(cx)}" y="{_f(cy)}">バス</text>')
+                    glyphs.append(f'<text class="gl bus on-{cls}" x="{_f(cx)}" y="{_f(cy)}">バス</text>')
                 elif code == "?":
-                    fg.append(f'<text class="gl on-{cls}" x="{_f(cx)}" y="{_f(cy)}">?</text>')
+                    glyphs.append(f'<text class="gl on-{cls}" x="{_f(cx)}" y="{_f(cy)}">?</text>')
                 else:
                     g = GLYPH[code]
-                    # 矢印は運転席から見た記号（↰↑↱）を、下向きに進む図に合わせて回す／裏返す
-                    tf = (f"rotate(180 {_f(cx)} {_f(cy)})" if mirror
-                          else f"translate(0 {_f(2 * cy)}) scale(1 -1)")
-                    fg.append(f'<text class="gl on-{cls} t{len(g)}" x="{_f(cx)}" y="{_f(cy)}" '
-                              f'transform="{tf}">{g}</text>')
+                    # 矢印は運転席から見た記号（↰↑↱）。上へ進む図ではそのまま、
+                    # 下へ進む図では回す（上空から見た向き）か裏返す（CSV の並び順）
+                    if up:
+                        tf = ""
+                    elif mirror:
+                        tf = f' transform="rotate(180 {_f(cx)} {_f(cy)})"'
+                    else:
+                        tf = f' transform="translate(0 {_f(2 * cy)}) scale(1 -1)"'
+                    glyphs.append(f'<text class="gl on-{cls} t{len(g)}" x="{_f(cx)}" y="{_f(cy)}"{tf}>{g}</text>')
             if row.kind == "手前":
                 a, b = row_span(k)
                 fg.append(f'<line class="stop" x1="{_f(a - 3)}" y1="{_f(y + G.ROW_H + 2)}" '
                           f'x2="{_f(b + 3)}" y2="{_f(y + G.ROW_H + 2)}"><title>停止線</title></line>')
 
         # 左の欄: 地点名と種別
-        cy = y + G.ROW_H / 2
+        cy = Y(y + G.ROW_H / 2)
         color = KIND_COLOR.get(row.kind, "#d92d20")
         kind = row.kind or "種別なし"
         bw = 12 * len(kind) + 10
@@ -951,7 +967,8 @@ def render_svg(route: Route, view: str = "map") -> str:
             f'height="{_f(L.height)}" viewBox="0 0 {_f(L.width)} {_f(L.height)}" '
             f'data-direction="{_e(route.direction)}" data-view="{view}">{SVG_STYLE}'
             f'<rect width="100%" height="100%" fill="#fff"/>'
-            + "".join(bg) + "".join(fg) + "".join(labels) + "</svg>")
+            + (f'<g transform="matrix(1 0 0 -1 0 {_f(K)})">' if up else "<g>")
+            + "".join(bg) + "".join(fg) + "</g>" + "".join(glyphs) + "".join(labels) + "</svg>")
 
 
 def render_legend() -> str:
@@ -1048,7 +1065,7 @@ def render_html(model: Model, title: str = "車線接続図") -> str:
 </header>
 <main>
 <section class="card"><h2>凡例</h2>{render_legend()}
-<p class="note">矢印は路面標示（↰ ↑ ↱）を、図の進む向き（上から下）に合わせて回しています。空欄のデータは推測で埋めず「未入力」「対応未定」と描きます。</p></section>
+<p class="note">北が上になるように、南行きは上から下へ、北行きは下から上へ進む図です。矢印は路面標示（↰ ↑ ↱）を図の進む向きに合わせて回しています。空欄のデータは推測で埋めず「未入力」「対応未定」と描きます。</p></section>
 {''.join(panes)}
 {''.join(lints)}
 </main>

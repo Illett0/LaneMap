@@ -132,6 +132,21 @@ class CrossStreetTest(unittest.TestCase):
         self.assertIn("鞍馬口通（西）", svg)
 
 
+class DirectionFlipTest(unittest.TestCase):
+    BODY = "{d},1,X,手前,L S,,,確,\n{d},2,X,直後,S,,,確,\n"
+
+    def test_northbound_flows_up(self):
+        svg = render.render_svg(model_of(self.BODY.format(d="北行き")).routes["北行き"])
+        self.assertIn('transform="matrix(1 0 0 -1 0', svg)
+        self.assertIn("進行方向 ↑", svg)
+        self.assertNotIn("rotate(180", svg)          # 矢印は上向きのまま
+
+    def test_southbound_flows_down(self):
+        svg = render.render_svg(model_of(self.BODY.format(d="南行き")).routes["南行き"])
+        self.assertNotIn("matrix(1 0 0 -1", svg)
+        self.assertIn("進行方向 ↓", svg)
+
+
 class LintTest(unittest.TestCase):
     def test_invalid_code(self):
         m = model_of("南行き,1,X,直後,S LS Q,,,確,\n")

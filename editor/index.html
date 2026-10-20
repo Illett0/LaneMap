@@ -218,7 +218,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
   <section class="col">
     <div class="ptools">
       <span class="small muted">図の向き</span>
-      <span class="seg" id="views"><button data-v="map" title="運転者の左が画面の右になります">上空から</button><button data-v="csv" title="車線1が画面の左になります（鏡像）">入力どおり</button></span>
+      <span class="seg" id="views"><button data-v="map" data-title="運転者の左が画面の右になります" title="運転者の左が画面の右になります">上空から</button><button data-v="csv" data-title="車線1が画面の左になります（鏡像）" title="車線1が画面の左になります（鏡像）">入力どおり</button></span>
       <span class="small muted">大きさ</span>
       <span class="seg" id="zoom"><button data-z="fit">幅に合わせる</button><button data-z="1">等倍</button></span>
       <span class="small muted">図をクリックするとその行を選びます</span>
@@ -383,7 +383,12 @@ function renderDirs(){
   $('#dirs').querySelectorAll('button').forEach(b => b.onclick = () => {
     st.dir = b.dataset.d; st.sel = rowsOf(st.dir)[0]?._id || null; st.lane = st.src = null; renderAll();
   });
-  $('#views').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === st.view); b.onclick = () => { st.view = b.dataset.v; renderDirs(); renderPreview(); }; });
+  const up = st.dir === '北行き';   // 北行きは下から上へ進む図で、向きによらず同じ
+  $('#views').querySelectorAll('button').forEach(b => {
+    b.classList.toggle('on', !up && b.dataset.v === st.view); b.disabled = up;
+    b.title = up ? '北行きは下から上へ進む図で、運転者の左が画面の左になります（向きによらず同じ）' : b.dataset.title || b.title;
+    b.onclick = () => { st.view = b.dataset.v; renderDirs(); renderPreview(); };
+  });
   $('#zoom').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.z === st.zoom); b.onclick = () => { st.zoom = b.dataset.z; renderDirs(); renderPreview(); }; });
   $('#filters').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.f === st.filter); b.onclick = () => { st.filter = b.dataset.f; renderDirs(); renderList(); }; });
 }
