@@ -164,6 +164,32 @@ def _suggest(tok: str) -> str:
     return "（使えるのは " + " ".join(LANE_CODES) + "）"
 
 
+def cross_sides(text: str) -> dict[str, str] | None:
+    """交差道路を {"東": 名, "西": 名} にする。
+
+    「七条通」のように東西の指定がなければ両側とも同じ名前。「東:二条通」のように
+    片側だけなら、もう片側には道路がない（T字路）。空欄は {}（不明）。書き方が不正なら None。
+    """
+    t = _nfkc(text).strip()
+    if not t:
+        return {}
+    if ":" not in t:
+        return {"東": t, "西": t}
+    out = {}
+    for tok in t.split():
+        key, _, val = tok.partition(":")
+        if key not in ("東", "西") or not val or key in out:
+            return None
+        out[key] = val
+    return out
+
+
+def left_right(sides: dict[str, str], direction: str) -> tuple[str | None, str | None]:
+    """東西の道路名を、進行方向に向かって (左, 右) に読み替える。南行きは左が東。"""
+    east, west = sides.get("東"), sides.get("西")
+    return (east, west) if direction == "南行き" else (west, east)
+
+
 def _make_row(line: int, rec: dict, issues: list[Issue]) -> Row | None:
     def get(key: str) -> str:
         return (rec.get(key) or "").strip()
@@ -214,6 +240,9 @@ def _make_row(line: int, rec: dict, issues: list[Issue]) -> Row | None:
     if row.conf not in CONF_RANK:
         add("エラー", f"確度 '{row.conf}' が不正です（確／資／推／空欄）")
         row.conf = ""
+    if cross_sides(row.cross) is None:
+        add("エラー", f"交差道路 '{row.cross}' の書き方が不正です（例: 七条通　東:紫明通 西:鞍馬口通　東:二条通）")
+        row.cross = ""
     return row
 
 
@@ -336,7 +365,18 @@ def _resolve(cur: Row, nxt: Row | None, crosses: dict[str, str], issues: list[Is
     def add(level: str, msg: str) -> None:
         issues.append(Issue(level, cur.line, msg, cur.where, cur.direction))
 
-    cross = crosses.get(cur.point, "")
+    sides = cross_sides(crosses.get(cur.point, "")) or {}
+    lname, rname = left_right(sides, cur.direction)
+
+    def side_name(side: str) -> str:
+        return (lname if side == "L" else rname) or ""
+
+    def check_side(side: str, j: int) -> None:
+        if sides and not side_name(side):
+            east_west = "東" if (side == "L") == (cur.direction == "南行き") else "西"
+            add("警告", f"車線{j + 1}が{'左' if side == 'L' else '右'}へ離脱していますが、"
+                        f"交差道路では{east_west}側に道路がありません（T字路）")
+
     if cur.lanes is None:
         if cur.conn:
             add("警告", f"車線が未入力のため、接続 '{cur.conn}' は使えません")
@@ -372,8 +412,10 @@ def _resolve(cur: Row, nxt: Row | None, crosses: dict[str, str], issues: list[Is
                 else:
                     t.links.append(Link(src - 1, "lane", dst - 1))
             elif kind == "exit":
-                t.links.append(Link(src - 1, "exit", name=name or cross,
-                                    side=side or infer_side(cur.lanes[src - 1], src - 1, n)))
+                side = side or infer_side(cur.lanes[src - 1], src - 1, n)
+                if not name:
+                    check_side(side, src - 1)
+                t.links.append(Link(src - 1, "exit", name=name or side_name(side), side=side))
             else:
                 add("警告", f"車線{src}は行き先を指定せずに途切れます（{tok}）")
                 t.links.append(Link(src - 1, "cut"))
@@ -402,7 +444,8 @@ def _resolve(cur: Row, nxt: Row | None, crosses: dict[str, str], issues: list[Is
         other = []
         for j, c in enumerate(cur.lanes):
             if c in ("L", "R"):
-                t.links.append(Link(j, "exit", name=cross, side=c, auto=True))
+                check_side(c, j)
+                t.links.append(Link(j, "exit", name=side_name(c), side=c, auto=True))
             elif "S" not in c:
                 other.append(j)
         if other:
@@ -522,6 +565,7 @@ SVG_STYLE = """<style>
 .lm .strip{fill:#e9ecef}
 .lm .stripedge{stroke:#adb5bd;stroke-width:1}
 .lm .stripname{font-size:12px;fill:#495057;font-weight:700}
+.lm .stripend{font-size:11px;fill:#495057}
 .lm .stop{stroke:#1f2933;stroke-width:3.5}
 .lm .ln,.lm .rb{stroke-width:1.5}
 .lm .ln.c-k,.lm .rb.c-k{fill:#2f5f98;stroke:#2f5f98}
@@ -695,17 +739,38 @@ def render_svg(route: Route, view: str = "map") -> str:
     labels.append(f'<text class="flow" x="{_f(L.cx)}" y="{_f(G.TOP - 10)}">進行方向 ↓</text>')
 
     # ---- 交差点（横の帯）
+    # 画面の右が東か: 上空から見た向きの南行き（北が上）と、CSV の並び順の北行き
+    east_right = (route.direction == "南行き") == mirror
+    strip_names: dict[str, set[str]] = {}
     for k, (gy1, gy2, strips) in L.gaps.items():
         for i, p in enumerate(strips):
             yc = gy1 + (gy2 - gy1) * (i + 1) / (len(strips) + 1)
-            name = route.crosses.get(p) or p
-            bg.append(f'<rect class="strip" x="{G.LABEL_W}" y="{_f(yc - 15)}" '
-                      f'width="{_f(L.width - G.LABEL_W - 8)}" height="30"/>')
+            sides = cross_sides(route.crosses.get(p, "")) or {}
+            strip_names[p] = set(sides.values()) | {p}
+            east, west = sides.get("東"), sides.get("西")
+            scr_l, scr_r = (west, east) if east_right else (east, west)
+            x1 = G.LABEL_W if (not sides or scr_l) else road_l - 10
+            x2 = L.width - 8 if (not sides or scr_r) else road_r + 10
+            bg.append(f'<rect class="strip" x="{_f(x1)}" y="{_f(yc - 15)}" '
+                      f'width="{_f(x2 - x1)}" height="30"/>')
             for yy in (yc - 15, yc + 15):
-                bg.append(f'<line class="stripedge" x1="{G.LABEL_W}" y1="{_f(yy)}" '
-                          f'x2="{_f(L.width - 8)}" y2="{_f(yy)}"/>')
+                bg.append(f'<line class="stripedge" x1="{_f(x1)}" y1="{_f(yy)}" '
+                          f'x2="{_f(x2)}" y2="{_f(yy)}"/>')
+            if not sides:
+                name = p
+            elif east == west:
+                name = east
+            else:
+                name = f"東:{east or 'なし'} 西:{west or 'なし'}"
             labels.append(f'<text class="stripname" x="24" y="{_f(yc + 4)}">┄ {_e(name)}'
                           f'{"" if name == p else "（" + _e(p) + "）"}</text>')
+            if sides and east != west:
+                for nm, ew, at_right in ((east, "東", east_right), (west, "西", not east_right)):
+                    if nm:
+                        x = x2 - 8 if at_right else x1 + 8
+                        labels.append(f'<text class="stripend" x="{_f(x)}" y="{_f(yc + 4)}" '
+                                      f'text-anchor="{"end" if at_right else "start"}">'
+                                      f'{_e(nm)}（{ew}）</text>')
 
     # ---- 行と行のあいだ
     for k, t in enumerate(trans):
@@ -772,10 +837,10 @@ def render_svg(route: Route, view: str = "map") -> str:
         if exits:
             if gap and gap[2]:
                 yc = gap[0] + (gap[1] - gap[0]) / (len(gap[2]) + 1)
-                strip_name = route.crosses.get(gap[2][0]) or gap[2][0]
+                here = strip_names.get(gap[2][0], set())
             else:
                 yc = y1 + max(gh, G.EDGE) * 0.55
-                strip_name = None
+                here = None
             by_side: dict[int, list[Link]] = {}
             for l in exits:
                 by_side.setdefault(out_dir(l.side), []).append(l)
@@ -789,12 +854,12 @@ def render_svg(route: Route, view: str = "map") -> str:
                     xe = (road_r if d_ > 0 else road_l) + d_ * G.EXIT_OUT
                     cls = CONF_CLASS[row.conf]
                     turn = "左" if l.side == "L" else "右"
-                    if l.name and l.name != strip_name:
+                    if l.name and (here is None or l.name not in here):
                         label = l.name
                     elif l.name:
                         label = ""
                     else:
-                        label = f"{turn}折" if strip_name else f"{turn}の側道"
+                        label = f"{turn}折" if here is not None else f"{turn}の側道"
                     fg.append(f'<path class="ex c-{cls}" data-line="{row.line}" '
                               f'd="M{_f(cx)},{_f(y1)} C{_f(cx)},{_f(ye)} {_f(cx)},{_f(ye)} '
                               f'{_f(xe)},{_f(ye)}"><title>{row.line}行目 車線{l.src + 1}：'

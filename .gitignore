@@ -2,5 +2,9 @@ __pycache__/
 *.pyc
 editor.pid
 logs/
-history/
 *.csv.tmp
+
+# 利用者ごとのデータ（CSV・作った図・編集履歴）はローカルにだけ置く
+/*.csv
+/lanes.html
+history/

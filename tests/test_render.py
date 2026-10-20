@@ -95,6 +95,43 @@ class AutoRuleTest(unittest.TestCase):
         self.assertEqual(ex[0].name, "七条通")
 
 
+class CrossStreetTest(unittest.TestCase):
+    HEAD = HEAD.strip() + ",交差道路\n"
+
+    def test_parse(self):
+        self.assertEqual(render.cross_sides("七条通"), {"東": "七条通", "西": "七条通"})
+        self.assertEqual(render.cross_sides("東:紫明通 西:鞍馬口通"), {"東": "紫明通", "西": "鞍馬口通"})
+        self.assertEqual(render.cross_sides("東：二条通"), {"東": "二条通"})
+        self.assertEqual(render.cross_sides(""), {})
+        self.assertIsNone(render.cross_sides("北:x"))
+
+    def test_left_right_by_direction(self):
+        sides = {"東": "紫明通", "西": "鞍馬口通"}
+        self.assertEqual(render.left_right(sides, "南行き"), ("紫明通", "鞍馬口通"))
+        self.assertEqual(render.left_right(sides, "北行き"), ("鞍馬口通", "紫明通"))
+
+    def test_auto_exit_uses_side_name(self):
+        body = "北行き,1,X,手前,L S R,,,確,,東:紫明通 西:鞍馬口通\n北行き,2,X,直後,S,,,確,,\n"
+        m = model_of(body, self.HEAD)
+        ex = {l.side: l.name for l in m.routes["北行き"].transitions[0].links if l.kind == "exit"}
+        self.assertEqual(ex, {"L": "鞍馬口通", "R": "紫明通"})
+
+    def test_t_junction_warns(self):
+        body = "南行き,1,X,手前,S R,,,確,,東:二条通\n南行き,2,X,直後,S,,,確,,\n"
+        m = model_of(body, self.HEAD)
+        self.assertTrue(any("T字路" in s for s in messages(m, "警告")))
+
+    def test_invalid_cross(self):
+        m = model_of("南行き,1,X,直後,S,,,確,,北:x\n", self.HEAD)
+        self.assertTrue(any("交差道路" in s for s in messages(m, "エラー")))
+
+    def test_svg_has_side_labels(self):
+        body = "南行き,1,X,手前,S,,,確,,東:紫明通 西:鞍馬口通\n南行き,2,X,直後,S,,,確,,\n"
+        svg = render.render_svg(model_of(body, self.HEAD).routes["南行き"])
+        self.assertIn("紫明通（東）", svg)
+        self.assertIn("鞍馬口通（西）", svg)
+
+
 class LintTest(unittest.TestCase):
     def test_invalid_code(self):
         m = model_of("南行き,1,X,直後,S LS Q,,,確,\n")

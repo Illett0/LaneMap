@@ -384,8 +384,9 @@ def main(argv: list[str] | None = None) -> int:
 
     csv_path = Path(args.csv).resolve()
     if not csv_path.exists():
-        print(f"CSV が見つかりません: {csv_path}", file=sys.stderr)
-        return 1
+        csv_path.parent.mkdir(parents=True, exist_ok=True)
+        csv_path.write_text(",".join(render.COLUMNS + render.OPTIONAL_COLUMNS) + "\n", encoding="utf-8")
+        print(f"CSV がなかったので、見出しだけの新しい CSV を作りました: {csv_path}", flush=True)
     html_path = Path(args.html).resolve() if args.html else csv_path.with_name("lanes.html")
 
     acquire_pid()

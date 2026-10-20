@@ -5,107 +5,178 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LaneMap エディタ</title>
 <style>
-:root{--bg:#f5f6f8;--card:#fff;--ink:#1f2933;--muted:#5f6b7a;--line:#d9dee4;--accent:#2f5f98;--accent-soft:#e7eef8;
-  --err:#b42318;--err-bg:#fef3f2;--warn:#93370d;--warn-bg:#fffaeb;--sel:#f08c00}
+:root{--bg:#f3f5f8;--card:#fff;--ink:#1f2933;--muted:#5f6b7a;--line:#d9dee4;--accent:#2f5f98;--accent-soft:#e7eef8;
+  --err:#b42318;--err-bg:#fef3f2;--warn:#93370d;--warn-bg:#fffaeb;--ok:#067647;--ok-bg:#ecfdf3;--sel:#f08c00;--road:#3d434b}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;
   display:grid;grid-template-rows:auto auto 1fr;overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-header{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 14px;background:var(--card);border-bottom:1px solid var(--line)}
-header h1{font-size:16px;margin:0}
-.file{color:var(--muted);font-size:12px}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--card)}
-.seg button{border:0;background:transparent;padding:4px 12px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--card)}
+.seg button{border:0;background:transparent;padding:5px 12px}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button.on{background:var(--accent);color:#fff}
-.btn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:4px 12px}
-.btn:hover{border-color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:5px 12px;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.small{padding:2px 8px;font-size:12px}
-.btn:disabled{opacity:.45;cursor:default}
+.btn.primary:hover:not(:disabled){background:#264e7f}
+.btn.s{padding:2px 9px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:default}
+kbd{font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:0 4px;background:#fff}
+
+/* ヘッダー */
+header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:8px 14px;background:var(--card);border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0}
+.file{color:var(--muted);font-size:12px;max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spacer{flex:1}
-.status{font-size:12px;color:var(--muted)}
-.status.dirty{color:var(--warn);font-weight:700}
-#banner{display:none;padding:8px 14px;background:var(--warn-bg);border-bottom:1px solid #fedf89;color:var(--warn)}
+.savestate{font-size:12px;padding:3px 10px;border-radius:12px;background:#eef1f4;color:var(--muted)}
+.savestate.dirty{background:var(--warn-bg);color:var(--warn);font-weight:700}
+#banner{display:none;padding:8px 14px;border-bottom:1px solid #fedf89;background:var(--warn-bg);color:var(--warn)}
 #banner.show{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 #banner.error{background:var(--err-bg);color:var(--err);border-color:#fecdca}
-#banner.ok{background:#ecfdf3;color:#05603a;border-color:#abefc6}
-.layout{display:grid;grid-template-columns:minmax(440px,560px) 1fr;min-height:0}
-.left{display:grid;grid-template-rows:minmax(160px,38%) auto 1fr;min-height:0;border-right:1px solid var(--line)}
-.list{overflow:auto;background:var(--card)}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th{position:sticky;top:0;background:#eef1f4;text-align:left;font-weight:600;padding:4px 6px;font-size:12px;color:var(--muted);z-index:1}
-td{padding:3px 6px;border-top:1px solid #eef0f2;white-space:nowrap}
-tr.row{cursor:pointer}
-tr.row:hover{background:#f7f9fb}
-tr.row.on{background:var(--accent-soft)}
-td.lanes{font-family:"Segoe UI Symbol","Yu Gothic UI",sans-serif;letter-spacing:1px}
-.muted{color:var(--muted)}
-.kind{display:inline-block;padding:0 6px;border-radius:3px;color:#fff;font-size:11px;font-weight:700}
+#banner.ok{background:var(--ok-bg);color:var(--ok);border-color:#abefc6}
+
+/* 3列 */
+.layout{display:grid;grid-template-columns:300px minmax(420px,520px) 1fr;min-height:0}
+.col{min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.col:last-child{border-right:0}
+
+/* 交差点の一覧 */
+.listhead{padding:10px 12px 8px;background:var(--card);border-bottom:1px solid var(--line);display:grid;gap:8px}
+.progress{height:6px;border-radius:3px;background:#e4e8ee;overflow:hidden}
+.progress>i{display:block;height:100%;background:var(--accent)}
+.listhead input{width:100%;border:1px solid var(--line);border-radius:7px;padding:5px 8px}
+.filters{display:flex;gap:4px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:1px 10px;font-size:12px}
+.filters button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.list{overflow:auto;flex:1;padding:6px}
+.ix{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-bottom:6px}
+.ix.cur{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.ix .nm{font-weight:700;display:flex;gap:6px;align-items:baseline}
+.ix .nm small{font-weight:400;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pills{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:6px;padding:1px 7px;background:#fff;font-size:12px;cursor:pointer;min-width:0}
+.pill:hover{border-color:var(--accent)}
+.pill.on{background:var(--accent-soft);border-color:var(--accent);outline:2px solid var(--accent)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:#c3c9d1;flex:none}
+.pill.done .dot{background:var(--accent)}
+.pill.warn .dot{background:#f79009}
+.pill.err .dot{background:#d92d20}
+.pill .g{font-family:"Segoe UI Symbol","Yu Gothic UI",sans-serif;letter-spacing:1px}
+.kind{display:inline-block;padding:0 5px;border-radius:3px;color:#fff;font-size:11px;font-weight:700}
 .k-手前{background:#c2410c}.k-直後{background:#0f766e}.k-区間中{background:#6b7280}.k-x{background:#d92d20}
-.badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;font-size:11px;font-weight:700;text-align:center}
-.b-err{background:var(--err-bg);color:var(--err)}.b-warn{background:var(--warn-bg);color:var(--warn)}
-.rowops{display:flex;flex-wrap:wrap;gap:6px;padding:6px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fafbfc;align-items:center}
-.form{overflow:auto;padding:10px 12px 40px}
-.form h2{font-size:14px;margin:0 0 6px;display:flex;gap:8px;align-items:baseline}
-fieldset{border:1px solid var(--line);border-radius:8px;margin:0 0 10px;padding:8px 10px;background:var(--card)}
-legend{font-size:12px;font-weight:700;color:var(--muted);padding:0 4px}
-.grid2{display:grid;grid-template-columns:80px 1fr;gap:6px 8px;align-items:center}
+.listfoot{padding:8px;border-top:1px solid var(--line);background:var(--card);display:flex;gap:4px;flex-wrap:wrap}
+
+/* フォーム */
+.form{overflow:auto;flex:1;padding:12px 14px 60px}
+.rowcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.rowcard .title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rowcard .title b{font-size:18px}
+.rowcard .what{font-size:12px;color:var(--muted);margin-top:2px}
+.rowcard .nav{display:flex;gap:6px;margin-top:8px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.step h3{font-size:14px;margin:0 0 2px;display:flex;align-items:center;gap:8px}
+.step h3 .no{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;align-items:center;justify-content:center}
+.step h3 .st{margin-left:auto;font-size:11px;font-weight:400;padding:1px 8px;border-radius:10px;background:#eef1f4;color:var(--muted)}
+.step h3 .st.ok{background:var(--ok-bg);color:var(--ok)}
+.step h3 .st.ng{background:var(--warn-bg);color:var(--warn)}
+.step .lead{font-size:12px;color:var(--muted);margin:0 0 8px}
+details.place{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:12px}
+details.place summary{cursor:pointer;font-size:13px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:76px 1fr;gap:6px 8px;align-items:center;margin-top:8px}
 .grid2 label{font-size:12px;color:var(--muted)}
-input[type=text],textarea,select{width:100%;border:1px solid var(--line);border-radius:5px;padding:4px 6px;background:#fff}
-textarea{min-height:52px;resize:vertical}
-input:focus,textarea:focus,select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
-.hint{font-size:12px;color:var(--muted);margin:4px 0 0}
-.chips{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end;min-height:56px;padding:4px;border:1px dashed var(--line);border-radius:6px;background:#fbfcfd}
-.chip{width:46px;height:52px;border:2px solid var(--accent);border-radius:5px;background:var(--accent);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;position:relative}
-.chip .g{font-size:18px;font-family:"Segoe UI Symbol","Yu Gothic UI",sans-serif}
-.chip small{font-size:10px;opacity:.85}
-.chip .n{position:absolute;top:-1px;left:3px;font-size:9px;opacity:.8}
-.chip.on{outline:3px solid var(--sel);outline-offset:1px}
-.chip.bad{background:var(--err-bg);color:var(--err);border-color:var(--err)}
-.chips .empty{color:var(--muted);font-size:12px;align-self:center;padding:0 6px}
-.palette{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.palette button{border:1px solid var(--line);background:#fff;border-radius:5px;padding:2px 8px;font-size:12px}
-.palette button .g{font-family:"Segoe UI Symbol",sans-serif;font-size:15px;margin-right:2px}
+input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:#fff}
+textarea{min-height:54px;resize:vertical}
+input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.raw{margin-top:8px}
+.raw summary{font-size:12px;color:var(--muted);cursor:pointer}
+
+/* 車線（運転席から見た道路） */
+.road{background:var(--road);border-radius:8px;padding:10px 10px 6px;position:relative}
+.road .ahead{color:#aeb6c0;font-size:11px;text-align:center;margin-bottom:4px}
+.lanes{display:flex;justify-content:center;min-height:62px;align-items:stretch}
+.lane{width:52px;border:0;background:transparent;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-left:2px dashed rgba(255,255,255,.55);position:relative;padding:4px 0}
+.lane:first-child{border-left:3px solid #fff}
+.lane:last-child{border-right:3px solid #fff}
+.lane .g{font-size:22px;line-height:1;font-family:"Segoe UI Symbol","Yu Gothic UI",sans-serif}
+.lane .c{font-size:10px;opacity:.8;margin-top:3px}
+.lane .n{position:absolute;top:1px;left:4px;font-size:9px;opacity:.7}
+.lane:hover{background:rgba(255,255,255,.08)}
+.lane.on{background:rgba(240,140,0,.35);box-shadow:inset 0 0 0 2px var(--sel)}
+.lane.bad{color:#ffb4ab}
+.lanes .empty{color:#aeb6c0;align-self:center;font-size:12px}
+.road .lr{display:flex;justify-content:space-between;color:#aeb6c0;font-size:11px;margin-top:4px}
+.palette{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+.palette button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.palette button .g{font-size:18px;font-family:"Segoe UI Symbol","Yu Gothic UI",sans-serif}
+.palette button span:last-child{font-size:11px;color:var(--muted)}
 .palette button:hover{border-color:var(--accent);background:var(--accent-soft)}
-.ops{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.lr{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:0 2px 2px}
-.conn{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center}
-.conn .src{font-size:12px;white-space:nowrap}
-.conn .dst{display:flex;gap:4px;align-items:center}
-.conn .dst select{width:auto;flex:0 0 auto}
-.conn .dst input{flex:1;min-width:80px}
-.auto{font-size:12px;padding:4px 8px;border-radius:5px;background:#f2f4f7;margin-top:6px}
-.auto.ng{background:var(--warn-bg);color:var(--warn)}
-.confseg button{min-width:52px}
+.ops{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+
+/* 接続のミニ図 */
+.connbox{border:1px solid var(--line);border-radius:8px;background:#fbfcfd;padding:6px}
+.connbox svg{display:block;margin:0 auto;max-width:100%}
+.connbox .lbl{font-size:11px;fill:#5f6b7a}
+.connbox .ln{cursor:pointer}
+.connbox .ln rect{fill:#e8edf3;stroke:#9aa5b1;stroke-width:1}
+.connbox .ln.src rect{fill:#dbe6f4;stroke:var(--accent)}
+.connbox .ln.sel rect{fill:#ffe8c7;stroke:var(--sel);stroke-width:2.5}
+.connbox .ln:hover rect{stroke:var(--accent);stroke-width:2}
+.connbox .ln.dim{cursor:default}
+.connbox .ln text{font-size:16px;text-anchor:middle;dominant-baseline:central;font-family:"Segoe UI Symbol","Yu Gothic UI",sans-serif;pointer-events:none}
+.connbox .lk{fill:none;stroke:var(--accent);stroke-width:9;stroke-opacity:.75;stroke-linecap:round}
+.connbox .lk.auto{stroke:#8a96a3;stroke-dasharray:3 6;stroke-width:6}
+.connbox .lk.sel{stroke:var(--sel)}
+.connbox .xname{font-size:11px;font-weight:700;fill:#1f2933}
+.connbox .q{font-size:13px;font-weight:700;fill:#b54708;text-anchor:middle}
+.conntools{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;align-items:center}
+.autonote{font-size:12px;padding:5px 9px;border-radius:6px;background:#f2f4f7;margin-top:8px}
+.autonote.ng{background:var(--warn-bg);color:var(--warn)}
+.confs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.confs button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px;line-height:1.25}
+.confs button b{display:block;font-size:15px}
+.confs button span{font-size:10px;color:var(--muted)}
+.confs button.on{border-color:var(--accent);background:var(--accent-soft);outline:2px solid var(--accent)}
 .rowissues{list-style:none;margin:0;padding:0;font-size:12px}
-.rowissues li{padding:2px 6px;border-radius:4px;margin-bottom:2px}
-.right{display:grid;grid-template-rows:auto 1fr auto;min-height:0}
-.ptools{display:flex;gap:10px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line);background:var(--card);flex-wrap:wrap}
-.preview{overflow:auto;padding:12px;background:#eef1f4}
-.preview svg{max-width:none;background:#fff;border:1px solid var(--line);border-radius:6px;display:block}
+.rowissues li{padding:3px 8px;border-radius:5px;margin-bottom:3px}
+
+/* 図 */
+.ptools{display:flex;gap:8px;align-items:center;padding:7px 12px;border-bottom:1px solid var(--line);background:var(--card);flex-wrap:wrap}
+.preview{overflow:auto;flex:1;padding:12px;background:#e9edf2}
+.preview svg{background:#fff;border:1px solid var(--line);border-radius:6px;display:block}
+.preview.fit svg{max-width:100%;height:auto}
 .preview [data-line]{cursor:pointer}
-.lint{max-height:32vh;overflow:auto;background:var(--card);border-top:1px solid var(--line);padding:6px 12px}
-.lint h3{font-size:13px;margin:2px 0 4px}
-.lint ul{list-style:none;margin:0;padding:0;font-size:12px}
+.lint{max-height:30vh;overflow:auto;background:var(--card);border-top:1px solid var(--line)}
+.lint summary{padding:7px 12px;cursor:pointer;font-size:13px;font-weight:700;position:sticky;top:0;background:var(--card)}
+.lint ul{list-style:none;margin:0;padding:0 12px 8px;font-size:12px}
 .lint li{padding:2px 6px;border-radius:4px;cursor:pointer}
 .lint li:hover{background:#f2f4f7}
 .lv-エラー{color:var(--err);background:var(--err-bg)}
 .lv-警告{color:var(--warn)}
 .lv-情報{color:var(--muted)}
-kbd{font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:0 4px;background:#fff}
-@media (max-width:980px){
+
+/* 使い方 */
+#help{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:10}
+#help.show{display:flex}
+#help .box{background:#fff;border-radius:12px;max-width:640px;width:calc(100% - 32px);max-height:calc(100% - 32px);overflow:auto;padding:18px 22px}
+#help h2{margin:0 0 8px;font-size:18px}
+#help ol{padding-left:20px;margin:8px 0}
+#help li{margin-bottom:6px}
+#help .kinds{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px;margin:8px 0;align-items:center}
+
+@media (max-width:1180px){
   body{display:block;overflow:auto}
   header{position:sticky;top:0;z-index:3}
   .layout{display:block}
-  .left{display:block;border-right:0}
-  .list{max-height:40vh}
+  .col{border-right:0;border-bottom:1px solid var(--line)}
+  .list{max-height:42vh}
   .form{overflow:visible}
-  .right{display:block}
-  .preview{overflow:auto;max-height:80vh}
-  .lint{max-height:none}
+  .preview{max-height:85vh}
 }
 </style>
 </head>
@@ -113,54 +184,86 @@ kbd{font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-r
 <header>
   <h1>LaneMap エディタ</h1>
   <span class="file" id="file"></span>
-  <span class="seg" id="dirs"></span>
-  <span class="status" id="progress"></span>
   <span class="spacer"></span>
-  <span class="status" id="status">読み込み中…</span>
+  <span class="savestate" id="savestate">読み込み中…</span>
   <button class="btn" id="undo" title="元に戻す（Ctrl+Z）">↶ 元に戻す</button>
   <button class="btn primary" id="save" title="Ctrl+S">保存</button>
-  <a class="btn" href="/view" target="_blank" rel="noopener">図を別タブで開く</a>
+  <a class="btn" href="/view" target="_blank" rel="noopener" title="保存前の内容で、配布用の図（HTML）を開きます">図を別タブで開く</a>
+  <button class="btn" id="helpBtn">？ 使い方</button>
   <button class="btn" id="quit" title="エディタのサーバーを止めます">終了</button>
 </header>
 <div id="banner"></div>
 <div class="layout">
-  <section class="left">
-    <div class="list"><table><thead><tr><th>行</th><th>順</th><th>地点</th><th>種別</th><th>車線</th><th>確度</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
-    <div class="rowops">
-      <button class="btn small" id="add" title="選んだ行の下に追加">＋ 下に行を追加</button>
-      <button class="btn small" id="dup">複製</button>
-      <button class="btn small" id="up" title="Alt+Shift+↑">↑ 上へ</button>
-      <button class="btn small" id="down" title="Alt+Shift+↓">↓ 下へ</button>
-      <button class="btn small" id="del">削除</button>
+  <section class="col">
+    <div class="listhead">
+      <span class="seg" id="dirs"></span>
+      <div><div class="small muted" id="progressText"></div><div class="progress"><i id="progressBar" style="width:0"></i></div></div>
+      <input type="search" id="search" placeholder="交差点・通りの名前で絞り込み">
+      <div class="filters" id="filters">
+        <button data-f="all" class="on">すべて</button><button data-f="todo">未入力あり</button><button data-f="issue">警告・エラーあり</button>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="listfoot">
+      <button class="btn s" id="add" title="選んだ行の下に行を追加">＋ 行を追加</button>
+      <button class="btn s" id="dup">複製</button>
+      <button class="btn s" id="up" title="Alt+Shift+↑">↑</button>
+      <button class="btn s" id="down" title="Alt+Shift+↓">↓</button>
+      <button class="btn s" id="del">削除</button>
       <span class="spacer"></span>
-      <button class="btn small" id="nextBlank" title="車線が未入力の次の行へ">次の未入力へ →</button>
+      <button class="btn s" id="nextBlank" title="車線が未入力の次の行へ">次の未入力 →</button>
     </div>
-    <div class="form" id="form"></div>
   </section>
-  <section class="right">
+  <section class="col"><div class="form" id="form"></div></section>
+  <section class="col">
     <div class="ptools">
-      <span class="muted">図の向き</span>
-      <span class="seg" id="views"><button data-v="map">上空から見た向き</button><button data-v="csv">CSV の並び順</button></span>
-      <span class="muted" style="font-size:12px">図の車線・地点名をクリックするとその行を選びます。<kbd>Alt</kbd>+<kbd>↑↓</kbd> で行の移動</span>
+      <span class="small muted">図の向き</span>
+      <span class="seg" id="views"><button data-v="map" title="運転者の左が画面の右になります">上空から</button><button data-v="csv" title="車線1が画面の左になります（鏡像）">入力どおり</button></span>
+      <span class="small muted">大きさ</span>
+      <span class="seg" id="zoom"><button data-z="fit">幅に合わせる</button><button data-z="1">等倍</button></span>
+      <span class="small muted">図をクリックするとその行を選びます</span>
     </div>
-    <div class="preview" id="preview"></div>
-    <div class="lint" id="lint"></div>
+    <div class="preview fit" id="preview"></div>
+    <details class="lint" id="lintbox" open><summary id="lintsum">検証結果</summary><ul id="lint"></ul></details>
   </section>
 </div>
+
+<div id="help"><div class="box">
+  <h2>LaneMap エディタの使い方</h2>
+  <p class="small muted">CSV の1行は、ある交差点の「手前」か「直後」の車線のならびです。行と行のつながり（接続）から、車線がどこへ行くかの図を作ります。</p>
+  <div class="kinds">
+    <span class="kind k-手前">手前</span><span>交差点の停止線の手前。右折・左折専用レーンがある所</span>
+    <span class="kind k-直後">直後</span><span>交差点を抜けた直後。本線の車線だけになる所</span>
+    <span class="kind k-区間中">区間中</span><span>交差点と交差点のあいだの途中</span>
+  </div>
+  <ol>
+    <li><b>左の一覧で行を選ぶ</b>：交差点ごとに「手前」「直後」が並んでいます。点の色で入力状況が分かります（灰＝未入力、青＝入力済み、橙＝警告、赤＝エラー）。</li>
+    <li><b>① 車線</b>：進行方向に向かって左から順に、ボタンで車線を足します。車線をクリックして選ぶと、置き換え・移動・削除ができます。</li>
+    <li><b>② 接続</b>：この行の車線が次の行でどの車線になるか。下の段（この行）の車線を選んでから、上の段（次の行）の車線をクリックしてつなぎます。曲がって出ていく車線は「左へ離脱」「右へ離脱」。何もしなければ<b>自動補完</b>（点線）になります。</li>
+    <li><b>③ 出典・確度</b>：どこで確かめたか。確度は 確（現地・ストリートビュー）／資（資料）／推（推定）。</li>
+    <li><b>保存</b>（<kbd>Ctrl</kbd>+<kbd>S</kbd>）：元のファイルは history/backups/ に残り、変更点は history/changes.csv に記録されます。</li>
+  </ol>
+  <p class="small muted">分からない所は空欄のままで大丈夫です。図では「未入力」「対応未定」と表示され、推測では埋めません。<br>
+  キー操作：<kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> 行の移動、<kbd>Ctrl</kbd>+<kbd>Z</kbd> 元に戻す</p>
+  <p style="text-align:right;margin:12px 0 0"><button class="btn primary" id="helpClose">はじめる</button></p>
+</div></div>
 
 <script>
 'use strict';
 const GLYPH = {L:'↰',S:'↑',R:'↱',SL:'↰↑',SR:'↑↱',LSR:'↰↑↱',B:'バス','?':'?'};
-const CODE_NAME = {L:'左折専用',S:'直進',R:'右折専用',SL:'直進・左折',SR:'直進・右折',LSR:'全方向',B:'バス',  '?':'不明'};
-const CONFS = [['確','現地・ストリートビューで確認'],['資','資料にある'],['推','推定'],['','空欄（不明）']];
-const st = {file:'', header:[], entries:[], codes:[], kinds:[], directions:[], dir:'南行き', view:'map',
-  sel:null, lane:null, dirty:false, preview:null, undo:[], seq:0, newId:0, pendingUndo:false};
+const CODE_NAME = {L:'左折専用',S:'直進',R:'右折専用',SL:'直進・左折',SR:'直進・右折',LSR:'全方向',B:'バス','?':'不明'};
+const KIND_WHAT = {'手前':'停止線の手前の車線', '直後':'交差点を抜けた直後の車線', '区間中':'交差点のあいだの途中の車線'};
+const CONFS = [['確','現地・SVで確認'],['資','資料にある'],['推','推定'],['','空欄（不明）']];
+const st = {header:[], entries:[], codes:[], kinds:[], directions:[], dir:'南行き', view:'map', zoom:'fit', filter:'all', q:'',
+  sel:null, lane:null, src:null, dirty:false, preview:null, undo:[], seq:0, newId:0, pendingUndo:false};
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isRow = e => !('_raw' in e) && !e._header;
-const lanesOf = e => (e['車線'] || '').trim() ? e['車線'].trim().split(/\s+/) : [];
+const lanesOf = e => (e?.['車線'] || '').trim() ? e['車線'].trim().split(/\s+/) : [];
 const byId = id => st.entries.find(e => e._id === id);
+const store = {get(k){ try { return localStorage.getItem(k); } catch (_) { return null; } },
+               set(k, v){ try { localStorage.setItem(k, v); } catch (_) {} }};
 
 // ---------------------------------------------------------------- データ
 function dirOf(e){ return st.directions.includes(e['方向']) ? e['方向'] : 'その他'; }
@@ -177,42 +280,41 @@ function neighbors(e){
   const rows = rowsOf(dirOf(e)); const i = rows.indexOf(e);
   return {rows, i, prev: rows[i-1] || null, next: rows[i+1] || null};
 }
-// 方向ごとに順を 1..n に振り直し、ファイル内の並びも順に合わせる
 function renumber(dir){
   const rows = rowsOf(dir);
   const slots = st.entries.map((e,i) => (isRow(e) && dirOf(e) === dir) ? i : -1).filter(i => i >= 0);
   rows.forEach((e,i) => { e['順'] = String(i + 1); st.entries[slots[i]] = e; });
 }
 function lineOf(id){ return st.preview?.lines?.[id]; }
-function idOfLine(line){
-  const m = st.preview?.lines || {};
-  return Object.keys(m).find(k => m[k] === line);
+function idOfLine(line){ const m = st.preview?.lines || {}; return Object.keys(m).find(k => m[k] === line); }
+function issuesOf(id){ const line = lineOf(id); return line ? (st.preview?.issues || []).filter(i => i.line === line) : []; }
+function statusOf(e){
+  const iss = issuesOf(e._id);
+  if (iss.some(i => i.level === 'エラー')) return 'err';
+  if (iss.some(i => i.level === '警告')) return 'warn';
+  return lanesOf(e).length ? 'done' : 'todo';
 }
-function issuesOf(id){
-  const line = lineOf(id);
-  return line ? (st.preview?.issues || []).filter(i => i.line === line) : [];
+// 同じ地点が続く行をまとめる（交差点ごと）
+function groupsOf(dir){
+  const out = [];
+  for (const e of rowsOf(dir)) {
+    const g = out[out.length - 1];
+    if (g && g.point === (e['地点'] || '') && e['地点']) g.rows.push(e);
+    else out.push({point: e['地点'] || '', rows: [e]});
+  }
+  return out;
 }
 
-// ---------------------------------------------------------------- 変更
-function pushUndo(){
-  st.undo.push(JSON.stringify(st.entries));
-  if (st.undo.length > 200) st.undo.shift();
-  $('#undo').disabled = false;
-}
-function changed(opts = {}){
-  st.dirty = true;
-  renderStatus();
-  renderList();
-  if (opts.form) renderForm();
-  schedulePreview();
-}
+// ---------------------------------------------------------------- 変更と元に戻す
+function pushUndo(){ st.undo.push(JSON.stringify(st.entries)); if (st.undo.length > 200) st.undo.shift(); $('#undo').disabled = false; }
+function changed(opts = {}){ st.dirty = true; renderHeader(); renderList(); if (opts.form) renderForm(); schedulePreview(); }
 function edit(fn, opts = {form:true}){ pushUndo(); fn(); changed(opts); }
 function doUndo(){
   if (!st.undo.length) return;
   st.entries = JSON.parse(st.undo.pop());
   if (st.sel && !byId(st.sel)) st.sel = null;
   $('#undo').disabled = !st.undo.length;
-  st.lane = null;
+  st.lane = st.src = null;
   changed({form:true});
 }
 
@@ -220,16 +322,15 @@ function doUndo(){
 async function api(path, body){
   const res = await fetch(path, body === undefined ? {} :
     {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-  let data = null;
-  try { data = await res.json(); } catch (_) {}
+  let data = null; try { data = await res.json(); } catch (_) {}
   return {status: res.status, data};
 }
 async function load(){
   const {data} = await api('/api/data');
-  Object.assign(st, {file: data.file, header: data.header, entries: data.entries, codes: data.codes,
-    kinds: data.kinds, directions: data.directions, dirty:false, undo:[]});
+  Object.assign(st, {header: data.header, entries: data.entries, codes: data.codes, kinds: data.kinds,
+    directions: data.directions, dirty:false, undo:[]});
   $('#file').textContent = data.path;
-  $('#file').title = '保存すると図も作り直します: ' + data.html;
+  $('#file').title = data.path + '\n保存すると図も作り直します: ' + data.html;
   if (!st.sel || !byId(st.sel)) st.sel = rowsOf(st.dir)[0]?._id || null;
   $('#undo').disabled = true;
   renderAll();
@@ -243,87 +344,83 @@ async function runPreview(){
   if (seq !== st.seq) return;
   if (status !== 200) { banner('図を作れませんでした: ' + (data?.error || status), 'error'); return; }
   st.preview = data;
-  renderPreview(); renderLint(); renderList(); renderAutoAndIssues(); renderStatus();
+  renderPreview(); renderLint(); renderList(); renderHeader(); renderLive();
 }
 async function save(force = false){
   clearTimeout(timer);
   const {status, data} = await api('/api/save', {entries: st.entries, force});
-  if (status === 409) {
-    banner(data.error, 'warn', [['再読み込み（編集を捨てる）', reload], ['上書き保存', () => save(true)]]);
-    return;
-  }
+  if (status === 409) { banner(data.error, 'warn', [['再読み込み（編集を捨てる）', reload], ['上書き保存', () => save(true)]]); return; }
   if (status !== 200) { banner('保存できませんでした: ' + (data?.error || status), 'error'); return; }
   st.dirty = false;
-  const t = new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'});
-  st.savedAt = t;
-  banner(data.changes ? `保存しました（変更 ${data.changes} 件）。図も作り直しました。バックアップ: history/backups/${data.backup || '—'}`
+  st.savedAt = new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'});
+  banner(data.changes ? `保存しました（変更 ${data.changes} 件）。図も作り直しました。元のファイルは history/backups/${data.backup || ''} に残っています。`
     : (data.message || '保存しました'), 'ok');
   setTimeout(() => { if ($('#banner').classList.contains('ok')) banner(''); }, 6000);
-  renderStatus();
-  runPreview();
+  renderHeader(); runPreview();
 }
-async function reload(){
-  await api('/api/reload', {});
-  banner('');
-  await load();
-}
+async function reload(){ await api('/api/reload', {}); banner(''); await load(); }
 function banner(msg, kind = 'warn', actions = []){
   const b = $('#banner');
   b.className = msg ? `show ${kind}` : '';
   b.innerHTML = msg ? `<span>${esc(msg)}</span>` : '';
-  actions.forEach(([label, fn]) => {
-    const btn = document.createElement('button'); btn.className = 'btn small'; btn.textContent = label;
-    btn.onclick = fn; b.appendChild(btn);
-  });
-  if (msg) { const x = document.createElement('button'); x.className = 'btn small'; x.textContent = '×'; x.onclick = () => banner(''); b.appendChild(x); }
+  actions.forEach(([label, fn]) => { const x = document.createElement('button'); x.className = 'btn s'; x.textContent = label; x.onclick = fn; b.appendChild(x); });
+  if (msg) { const x = document.createElement('button'); x.className = 'btn s'; x.textContent = '×'; x.onclick = () => banner(''); b.appendChild(x); }
 }
 
 // ---------------------------------------------------------------- 表示
-function renderAll(){ renderDirs(); renderStatus(); renderList(); renderForm(); renderPreview(); renderLint(); }
+function renderAll(){ renderHeader(); renderDirs(); renderList(); renderForm(); renderPreview(); renderLint(); }
 
+function renderHeader(){
+  const s = $('#savestate');
+  s.textContent = st.dirty ? '● 未保存の変更があります' : (st.savedAt ? `保存済み ${st.savedAt}` : '変更なし');
+  s.className = 'savestate' + (st.dirty ? ' dirty' : '');
+  const rows = rowsOf(st.dir); const done = rows.filter(e => lanesOf(e).length).length;
+  $('#progressText').textContent = `${st.dir}：車線を入力した行 ${done} / ${rows.length}`;
+  $('#progressBar').style.width = rows.length ? (100 * done / rows.length) + '%' : '0';
+}
 function renderDirs(){
   $('#dirs').innerHTML = dirList().map(d => `<button data-d="${esc(d)}" class="${d === st.dir ? 'on' : ''}">${esc(d)}</button>`).join('');
   $('#dirs').querySelectorAll('button').forEach(b => b.onclick = () => {
-    st.dir = b.dataset.d; st.sel = rowsOf(st.dir)[0]?._id || null; st.lane = null; renderAll();
+    st.dir = b.dataset.d; st.sel = rowsOf(st.dir)[0]?._id || null; st.lane = st.src = null; renderAll();
   });
-  $('#views').querySelectorAll('button').forEach(b => {
-    b.classList.toggle('on', b.dataset.v === st.view);
-    b.onclick = () => { st.view = b.dataset.v; renderDirs(); renderPreview(); };
-  });
+  $('#views').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === st.view); b.onclick = () => { st.view = b.dataset.v; renderDirs(); renderPreview(); }; });
+  $('#zoom').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.z === st.zoom); b.onclick = () => { st.zoom = b.dataset.z; renderDirs(); renderPreview(); }; });
+  $('#filters').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.f === st.filter); b.onclick = () => { st.filter = b.dataset.f; renderDirs(); renderList(); }; });
 }
-function renderStatus(){
-  const s = $('#status');
-  s.textContent = st.dirty ? '● 未保存の変更があります' : (st.savedAt ? `保存済み（${st.savedAt}）` : '変更なし');
-  s.className = 'status' + (st.dirty ? ' dirty' : '');
-  const rows = rowsOf(st.dir); const done = rows.filter(e => lanesOf(e).length).length;
-  const c = st.preview?.counts;
-  $('#progress').textContent = `${st.dir}：車線入力済み ${done}/${rows.length} 行` + (c ? `　エラー ${c['エラー']} / 警告 ${c['警告']}` : '');
-}
-function lanesText(e){ const l = lanesOf(e); return l.length ? l.map(c => GLYPH[c] || c).join(' ') : '<span class="muted">未入力</span>'; }
+function glyphs(e){ const l = lanesOf(e); return l.length ? l.map(c => GLYPH[c] || '!').join('') : '未入力'; }
 function renderList(){
-  const rows = rowsOf(st.dir);
-  $('#rows').innerHTML = rows.map(e => {
-    const iss = issuesOf(e._id);
-    const ne = iss.filter(i => i.level === 'エラー').length, nw = iss.filter(i => i.level === '警告').length;
-    const kind = e['種別'] || '';
-    const kc = ['手前','直後','区間中'].includes(kind) ? kind : 'x';
-    return `<tr class="row ${e._id === st.sel ? 'on' : ''}" data-id="${esc(e._id)}">
-      <td class="muted">${lineOf(e._id) ?? ''}</td><td>${esc(e['順'])}</td><td>${esc(e['地点'])}</td>
-      <td>${kind ? `<span class="kind k-${kc}">${esc(kind)}</span>` : ''}</td>
-      <td class="lanes" title="${esc(e['車線'])}">${lanesText(e)}</td><td>${esc(e['確度'])}</td>
-      <td>${ne ? `<span class="badge b-err" title="エラー">${ne}</span>` : ''}${nw ? `<span class="badge b-warn" title="警告">${nw}</span>` : ''}</td></tr>`;
-  }).join('') || `<tr><td colspan="7" class="muted">行がありません。「＋ 下に行を追加」で作れます。</td></tr>`;
-  $('#rows').querySelectorAll('tr.row').forEach(tr => tr.onclick = () => select(tr.dataset.id));
-  const on = $('#rows tr.on'); if (on) on.scrollIntoView({block:'nearest'});
+  const q = st.q.trim();
+  const groups = groupsOf(st.dir).filter(g => {
+    if (q && !g.rows.some(e => (e['地点'] || '').includes(q) || (e['交差道路'] || '').includes(q))) return false;
+    if (st.filter === 'todo') return g.rows.some(e => !lanesOf(e).length);
+    if (st.filter === 'issue') return g.rows.some(e => ['warn','err'].includes(statusOf(e)));
+    return true;
+  });
+  $('#list').innerHTML = groups.map(g => {
+    const cur = g.rows.some(e => e._id === st.sel);
+    const cross = g.rows.find(e => e['交差道路'])?.['交差道路'] || '';
+    return `<div class="ix ${cur ? 'cur' : ''}"><div class="nm">${esc(g.point || '（地点なし）')}<small>${esc(cross)}</small></div>
+      <div class="pills">${g.rows.map(e => {
+        const k = e['種別'] || ''; const kc = ['手前','直後','区間中'].includes(k) ? k : 'x';
+        return `<span class="pill ${statusOf(e)} ${e._id === st.sel ? 'on' : ''}" data-id="${esc(e._id)}" title="${esc((e['車線'] || '未入力') + (e['確度'] ? '　確度:' + e['確度'] : ''))}">
+          <i class="dot"></i><span class="kind k-${kc}">${esc(k || '種別なし')}</span><span class="g">${esc(glyphs(e))}</span></span>`;
+      }).join('')}</div></div>`;
+  }).join('') || '<p class="small muted" style="padding:8px">当てはまる交差点はありません。</p>';
+  $('#list').querySelectorAll('.pill').forEach(p => p.onclick = () => select(p.dataset.id));
+  $('#list .pill.on')?.scrollIntoView({block:'nearest'});
 }
 function select(id){
   const e = byId(id); if (!e) return;
   if (dirOf(e) !== st.dir) { st.dir = dirOf(e); renderDirs(); }
-  st.sel = id; st.lane = null;
-  renderList(); renderForm(); renderPreview(); renderStatus();
+  st.sel = id; st.lane = st.src = null;
+  renderList(); renderForm(); renderPreview(); renderHeader();
+}
+function move(d){
+  const e = byId(st.sel); if (!e) return;
+  const {rows, i} = neighbors(e); const t = rows[i + d]; if (t) select(t._id);
 }
 
-// ---- 入力フォーム
+// ---------------------------------------------------------------- フォーム
 function datalist(id, col){
   const vals = [...new Set(st.entries.filter(isRow).map(e => (e[col] || '').trim()).filter(Boolean))];
   return `<datalist id="${id}">${vals.map(v => `<option value="${esc(v)}">`).join('')}</datalist>`;
@@ -332,60 +429,75 @@ function renderForm(){
   const f = $('#form');
   const e = byId(st.sel);
   if (!e) { f.innerHTML = '<p class="muted">左の一覧から行を選んでください。</p>'; return; }
-  const {prev, next} = neighbors(e);
+  const {prev, next, rows, i} = neighbors(e);
   const lanes = lanesOf(e);
+  const k = e['種別'] || ''; const kc = ['手前','直後','区間中'].includes(k) ? k : 'x';
   f.innerHTML = `
-  <h2>${esc(e['方向'])} 順${esc(e['順'])} ${esc(e['地点'] || '（地点なし）')} <span class="muted" style="font-size:12px">${lineOf(e._id) ? lineOf(e._id) + '行目' : ''}</span></h2>
-  <fieldset><legend>場所</legend><div class="grid2">
-    <label for="f-point">地点</label><input type="text" id="f-point" list="dl-point" data-col="地点" value="${esc(e['地点'])}" placeholder="例: 七条堀川">
-    <label>種別</label><span class="seg" id="f-kind">${st.kinds.map(k => `<button data-k="${k}" class="${e['種別'] === k ? 'on' : ''}">${k}</button>`).join('')}</span>
-    <label for="f-cross">交差道路</label><input type="text" id="f-cross" list="dl-cross" data-col="交差道路" value="${esc(e['交差道路'])}" placeholder="交差する通りの名前（任意。離脱先のラベルになる）">
-  </div>${datalist('dl-point','地点')}${datalist('dl-cross','交差道路')}</fieldset>
+  <div class="rowcard">
+    <div class="title"><b>${esc(e['地点'] || '（地点なし）')}</b><span class="kind k-${kc}">${esc(k || '種別なし')}</span>
+      <span class="small muted">${esc(e['方向'])}　${i + 1} / ${rows.length} 行目${lineOf(e._id) ? `（CSV ${lineOf(e._id)}行目）` : ''}</span></div>
+    <div class="what">${esc(KIND_WHAT[k] || '種別を選んでください')}${e['交差道路'] ? `　｜　交差道路：${esc(e['交差道路'])}` : ''}</div>
+    <div class="nav"><button class="btn s" id="prevRow" ${prev ? '' : 'disabled'}>← 前の行</button><button class="btn s" id="nextRow" ${next ? '' : 'disabled'}>次の行 →</button></div>
+  </div>
 
-  <fieldset><legend>車線（進行方向に向かって左から）</legend>
-    <div class="lr"><span>← 左</span><span>右 →</span></div>
-    <div class="chips" id="chips">${lanes.length ? lanes.map((c,j) => `<button class="chip ${j === st.lane ? 'on' : ''} ${GLYPH[c] ? '' : 'bad'}" data-j="${j}" title="${esc(CODE_NAME[c] || '不正なコード')}"><span class="n">${j+1}</span><span class="g">${esc(GLYPH[c] || '!')}</span><small>${esc(c)}</small></button>`).join('') : '<span class="empty">未入力（下のボタンで右端に追加）</span>'}</div>
-    <div class="palette" id="palette">${st.codes.map(c => `<button data-c="${esc(c)}" title="${esc(CODE_NAME[c])}"><span class="g">${esc(c === 'B' ? '🚌' : GLYPH[c])}</span>${esc(c)} ${esc(CODE_NAME[c])}</button>`).join('')}</div>
-    <p class="hint">${st.lane === null ? 'ボタンを押すと右端に追加します。車線をクリックすると選べて、ボタンでその車線を置き換えます。' : `車線${st.lane + 1} を選んでいます。ボタンで置き換え、もう一度クリックで選択解除。`}</p>
-    <div class="ops">
-      <button class="btn small" id="l-left" ${st.lane === null || st.lane === 0 ? 'disabled' : ''}>◀ 左へ</button>
-      <button class="btn small" id="l-right" ${st.lane === null || st.lane >= lanes.length - 1 ? 'disabled' : ''}>右へ ▶</button>
-      <button class="btn small" id="l-del" ${st.lane === null ? 'disabled' : ''}>この車線を削除</button>
-      <button class="btn small" id="l-clear" ${lanes.length ? '' : 'disabled'}>全部消す（未入力に戻す）</button>
-      <button class="btn small" id="l-copy" ${prev && lanesOf(prev).length ? '' : 'disabled'} title="前の行の車線をそのまま写します">前の行から写す</button>
+  <details class="place" ${e['地点'] && k ? '' : 'open'}><summary>場所の情報（地点・種別・交差道路）を編集</summary>
+    <div class="grid2">
+      <label for="f-point">地点</label><input type="text" id="f-point" list="dl-point" data-col="地点" value="${esc(e['地点'])}" placeholder="例: 七条堀川">
+      <label>種別</label><span class="seg" id="f-kind">${st.kinds.map(x => `<button data-k="${x}" class="${k === x ? 'on' : ''}" title="${esc(KIND_WHAT[x])}">${x}</button>`).join('')}</span>
+      <label for="f-cross">交差道路</label><input type="text" id="f-cross" list="dl-cross" data-col="交差道路" value="${esc(e['交差道路'])}" placeholder="例: 七条通　／　東:紫明通 西:鞍馬口通　／　東:二条通">
     </div>
-    <div class="grid2" style="margin-top:6px"><label for="f-lanes">文字で</label><input type="text" id="f-lanes" data-col="車線" value="${esc(e['車線'])}" placeholder="例: L S S R（半角スペース区切り）"></div>
-  </fieldset>
+    <p class="hint">交差道路は離脱先の名前に使います。東西で名前が違うときは「東:○○ 西:○○」、片側にしか道がない（T字路）ときは「東:○○」のように書きます。</p>
+    ${datalist('dl-point','地点')}${datalist('dl-cross','交差道路')}
+  </details>
 
-  <fieldset><legend>接続（この行の車線が、次の行でどうなるか）</legend>
-    ${renderConn(e, next)}
-    <div class="grid2" style="margin-top:6px"><label for="f-conn">文字で</label><input type="text" id="f-conn" data-col="接続" value="${esc(e['接続'])}" placeholder="空欄なら自動補完。例: 1>1 2>2 3>2 4>@五条通"></div>
-    <div id="autobox"></div>
-  </fieldset>
+  <div class="step"><h3><span class="no">1</span>車線<span class="st ${lanes.length ? 'ok' : ''}">${lanes.length ? lanes.length + '車線' : '未入力'}</span></h3>
+    <p class="lead">運転席から前を見たときの車線を、左から順に入れます。</p>
+    <div class="road"><div class="ahead">▲ 進行方向</div>
+      <div class="lanes" id="lanes">${lanes.length ? lanes.map((c,j) => `<button class="lane ${j === st.lane ? 'on' : ''} ${GLYPH[c] ? '' : 'bad'}" data-j="${j}" title="車線${j+1}：${esc(CODE_NAME[c] || '不正なコード')}"><span class="n">${j+1}</span><span class="g">${esc(GLYPH[c] || '!')}</span><span class="c">${esc(c)}</span></button>`).join('') : '<span class="empty">まだ車線がありません。下のボタンで左から足してください</span>'}</div>
+      <div class="lr"><span>← 左</span><span>右 →</span></div></div>
+    <div class="palette" id="palette">${st.codes.map(c => `<button data-c="${esc(c)}"><span class="g">${esc(c === 'B' ? 'バス' : GLYPH[c])}</span><span>${esc(c)} ${esc(CODE_NAME[c])}</span></button>`).join('')}</div>
+    <p class="hint">${st.lane === null ? 'ボタンを押すと右端に足します。車線をクリックすると選べます。' : `車線${st.lane + 1}を選択中：ボタンで置き換えます（もう一度クリックで解除）。`}</p>
+    <div class="ops">
+      <button class="btn s" id="l-left" ${st.lane === null || st.lane === 0 ? 'disabled' : ''}>◀ 左へ</button>
+      <button class="btn s" id="l-right" ${st.lane === null || st.lane >= lanes.length - 1 ? 'disabled' : ''}>右へ ▶</button>
+      <button class="btn s" id="l-del" ${st.lane === null ? 'disabled' : ''}>この車線を削除</button>
+      <button class="btn s" id="l-clear" ${lanes.length ? '' : 'disabled'}>全部消す</button>
+      <button class="btn s" id="l-copy" ${prev && lanesOf(prev).length ? '' : 'disabled'} title="前の行の車線を写します">前の行から写す</button>
+    </div>
+    <details class="raw"><summary>文字で編集する</summary><input type="text" id="f-lanes" data-col="車線" value="${esc(e['車線'])}" placeholder="例: L S S R（半角スペース区切り）"></details>
+  </div>
 
-  <fieldset><legend>出典・確度</legend><div class="grid2">
-    <label for="f-src">出典</label><input type="text" id="f-src" list="dl-src" data-col="出典" value="${esc(e['出典'])}" placeholder="例: 近畿地方整備局H29資料／ストリートビュー（撮影年月）／現地">
-    <label>確度</label><span class="seg confseg" id="f-conf">${CONFS.map(([v,t]) => `<button data-v="${v}" title="${t}" class="${(e['確度'] || '') === v ? 'on' : ''}">${v || '空欄'}</button>`).join('')}</span>
-    <label for="f-memo">メモ</label><textarea id="f-memo" data-col="メモ">${esc(e['メモ'])}</textarea>
-  </div>${datalist('dl-src','出典')}
-  <div class="ops"><button class="btn small" id="c-copy" ${prev ? '' : 'disabled'}>前の行から出典・確度を写す</button></div></fieldset>
+  <div class="step"><h3><span class="no">2</span>接続<span class="st" id="connState"></span></h3>
+    <p class="lead">この行の車線が、次の行（進んだ先）でどの車線になるか。</p>
+    <div id="connArea"></div>
+    <details class="raw"><summary>文字で編集する</summary><input type="text" id="f-conn" data-col="接続" value="${esc(e['接続'])}" placeholder="空欄なら自動補完。例: 1>1 2>2 3>2 4>@五条通"></details>
+  </div>
 
-  <fieldset><legend>この行の検証結果</legend><ul class="rowissues" id="rowissues"></ul></fieldset>`;
+  <div class="step"><h3><span class="no">3</span>出典・確度<span class="st ${e['確度'] ? 'ok' : ''}">${e['確度'] ? '確度：' + esc(e['確度']) : '確度は空欄'}</span></h3>
+    <div class="confs" id="f-conf">${CONFS.map(([v,t]) => `<button data-v="${v}" class="${(e['確度'] || '') === v ? 'on' : ''}"><b>${v || '空欄'}</b><span>${t}</span></button>`).join('')}</div>
+    <div class="grid2">
+      <label for="f-src">出典</label><input type="text" id="f-src" list="dl-src" data-col="出典" value="${esc(e['出典'])}" placeholder="例: ストリートビュー（2024年5月撮影）／国交省R2資料／現地">
+      <label for="f-memo">メモ</label><textarea id="f-memo" data-col="メモ">${esc(e['メモ'])}</textarea>
+    </div>${datalist('dl-src','出典')}
+    <div class="ops"><button class="btn s" id="c-copy" ${prev ? '' : 'disabled'}>前の行から出典・確度を写す</button></div>
+  </div>
 
-  // 文字の欄: 打つたびに反映（フォームは描き直さない）
+  <div class="step"><h3>この行の検証結果</h3><ul class="rowissues" id="rowissues"></ul></div>`;
+
   f.querySelectorAll('[data-col]').forEach(inp => {
     inp.addEventListener('focus', () => { st.pendingUndo = true; });
     inp.addEventListener('input', () => {
       if (st.pendingUndo) { pushUndo(); st.pendingUndo = false; }
-      e[inp.dataset.col] = inp.value;
-      changed();
+      e[inp.dataset.col] = inp.value; changed();
+      if (inp.dataset.col === '接続') renderConn();
     });
-    if (inp.dataset.col === '車線' || inp.dataset.col === '接続')
-      inp.addEventListener('change', () => { st.lane = null; renderForm(); });
+    if (inp.dataset.col === '車線') inp.addEventListener('change', () => { st.lane = st.src = null; renderForm(); });
   });
+  $('#prevRow').onclick = () => move(-1);
+  $('#nextRow').onclick = () => move(1);
   f.querySelectorAll('#f-kind button').forEach(b => b.onclick = () => edit(() => { e['種別'] = e['種別'] === b.dataset.k ? '' : b.dataset.k; }));
   f.querySelectorAll('#f-conf button').forEach(b => b.onclick = () => edit(() => { e['確度'] = b.dataset.v; }));
-  f.querySelectorAll('#chips .chip').forEach(b => b.onclick = () => { const j = +b.dataset.j; st.lane = st.lane === j ? null : j; renderForm(); });
+  f.querySelectorAll('#lanes .lane').forEach(b => b.onclick = () => { const j = +b.dataset.j; st.lane = st.lane === j ? null : j; renderForm(); });
   f.querySelectorAll('#palette button').forEach(b => b.onclick = () => edit(() => {
     const l = lanesOf(e);
     if (st.lane !== null && st.lane < l.length) l[st.lane] = b.dataset.c; else l.push(b.dataset.c);
@@ -398,15 +510,14 @@ function renderForm(){
   $('#l-clear').onclick = () => edit(() => { e['車線'] = ''; st.lane = null; });
   $('#l-copy').onclick = () => edit(() => { e['車線'] = lanesOf(prev).join(' '); });
   $('#c-copy').onclick = () => edit(() => { e['出典'] = prev['出典'] || ''; e['確度'] = prev['確度'] || ''; });
-  bindConn(e, next);
-  renderAutoAndIssues();
+  renderConn();
+  renderLive();
 }
 
-// ---- 接続の編集（車線ごとのプルダウン）
+// ---- 接続（ミニ図をクリックしてつなぐ）
 function inferSide(code, j, n){
   const l = code.includes('L'), r = code.includes('R');
-  if (l && !r) return 'L';
-  if (r && !l) return 'R';
+  if (l && !r) return 'L'; if (r && !l) return 'R';
   return (j + 0.5 < n / 2) ? 'L' : 'R';
 }
 function parseConn(raw, n){
@@ -419,82 +530,140 @@ function parseConn(raw, n){
     per[+m[1] - 1].push(m[2]);
   }
   if (per.some(p => p.length > 1)) ok = false;
-  return {ok, items: per.map(p => {
+  const items = per.map(p => {
     const t = p[0];
     if (t === undefined) return {k:''};
     if (/^\d+$/.test(t)) return {k:'n', d:+t};
     if (t === 'x' || t === 'X') return {k:'x'};
     if (t[0] === '@') { let r = t.slice(1), side = ''; if (r[0] === '<' || r[0] === '>') { side = r[0] === '<' ? 'L' : 'R'; r = r.slice(1); } return {k:'exit', side, name:r}; }
     ok = false; return {k:''};
-  })};
+  });
+  return {ok, items};
 }
 function buildConn(items, lanes){
   return items.map((it, j) => {
     if (!it.k) return '';
     if (it.k === 'n') return `${j+1}>${it.d}`;
     if (it.k === 'x') return `${j+1}>x`;
-    const inferred = inferSide(lanes[j], j, lanes.length);
-    const pre = (it.side && it.side !== inferred) ? (it.side === 'L' ? '<' : '>') : '';
+    const side = it.side || inferSide(lanes[j], j, lanes.length);
+    const pre = side !== inferSide(lanes[j], j, lanes.length) ? (side === 'L' ? '<' : '>') : '';
     return `${j+1}>@${pre}${(it.name || '').replace(/\s+/g, '')}`;
   }).filter(Boolean).join(' ');
 }
-function renderConn(e, next){
+function renderConn(){
+  const e = byId(st.sel); const box = $('#connArea'); if (!e || !box) return;
   const lanes = lanesOf(e);
-  if (!lanes.length) return '<p class="hint">先に車線を入力してください。</p>';
+  const {next} = neighbors(e);
   const nl = next ? lanesOf(next) : [];
-  const {ok, items} = parseConn(e['接続'], lanes.length);
-  if (!ok) return '<p class="hint">いまの接続はプルダウンで表せない書き方（分岐・書き間違いなど）なので、下の「文字で」の欄で直してください。</p>';
-  const nextNote = !next ? 'この行は最後の行です（次の行への接続は使われません。側道への離脱は書けます）。'
-    : !nl.length ? `次の行（順${esc(next['順'])} ${esc(next['地点'])}）の車線が未入力です。` : `次の行: 順${esc(next['順'])} ${esc(next['地点'])} ${esc(next['種別'])}（${nl.map(c => GLYPH[c] || c).join(' ')}）`;
-  const cross = e['交差道路'] || '';
-  return `<p class="hint" style="margin:0 0 6px">${nextNote}　すべて「未指定」なら空欄＝自動補完になります。</p><div class="conn" id="conn">` + lanes.map((c, j) => {
-    const it = items[j];
-    const opts = [['', '未指定'], ...nl.map((nc, k) => [`n:${k+1}`, `→ 次の${k+1}番目（${nc} ${GLYPH[nc] || ''}）`]),
-      ['exit', '↪ 側道へ離脱'], ['x', '× 途切れ（行き先なし）']];
-    const val = it.k === 'n' ? `n:${it.d}` : it.k;
-    if (it.k === 'n' && !(it.d >= 1 && it.d <= nl.length)) opts.push([val, `→ 次の${it.d}番目（存在しない）`]);
-    const side = it.side || inferSide(c, j, lanes.length);
-    return `<span class="src">車線${j+1} <b>${esc(GLYPH[c] || c)}</b> ${esc(c)}</span><span class="dst">
-      <select data-j="${j}" class="c-sel">${opts.map(([v,t]) => `<option value="${v}" ${v === val ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
-      ${it.k === 'exit' ? `<select data-j="${j}" class="c-side"><option value="L" ${side === 'L' ? 'selected' : ''}>左へ</option><option value="R" ${side === 'R' ? 'selected' : ''}>右へ</option></select>
-      <input type="text" data-j="${j}" class="c-name" value="${esc(it.name || '')}" placeholder="${esc(cross ? '空欄なら ' + cross : '通りの名前（空欄なら交差道路）')}">` : ''}</span>`;
-  }).join('') + '</div>';
-}
-function bindConn(e, next){
-  const lanes = lanesOf(e);
-  const box = $('#conn'); if (!box) return;
-  const read = () => {
-    const items = lanes.map(() => ({k:''}));
-    box.querySelectorAll('.c-sel').forEach(s => {
-      const j = +s.dataset.j, v = s.value;
-      if (v.startsWith('n:')) items[j] = {k:'n', d:+v.slice(2)};
-      else if (v === 'exit') {
-        const side = box.querySelector(`.c-side[data-j="${j}"]`)?.value || inferSide(lanes[j], j, lanes.length);
-        items[j] = {k:'exit', side, name: box.querySelector(`.c-name[data-j="${j}"]`)?.value || ''};
-      } else items[j] = {k: v};
-    });
-    return items;
-  };
-  const apply = () => edit(() => { e['接続'] = buildConn(read(), lanes); });
-  box.querySelectorAll('.c-sel, .c-side').forEach(s => s.onchange = apply);
-  box.querySelectorAll('.c-name').forEach(s => s.onchange = apply);
-}
-function renderAutoAndIssues(){
-  const e = byId(st.sel); if (!e) return;
-  const ab = $('#autobox');
-  if (ab) {
-    const a = st.preview?.auto?.[e._id];
-    if ((e['接続'] || '').trim() || !lanesOf(e).length) ab.innerHTML = '';
-    else if (!a) ab.innerHTML = '<div class="auto">空欄（自動補完）：次の行が未入力か最後の行なので、補う接続はありません。</div>';
-    else {
-      const ng = a.unresolved.length;
-      ab.innerHTML = `<div class="auto ${ng ? 'ng' : ''}">空欄（自動補完）の結果：<b>${esc(a.text || 'なし')}</b>${ng ? `<br>車線${a.unresolved.join('・')} は対応を決められません（接続を入力してください）` : ''}
-        ${a.text ? ' <button class="btn small" id="autoFill" title="自動補完の結果を接続の欄に書き込みます">この内容を書き込む</button>' : ''}</div>`;
-      const b = $('#autoFill'); if (b) b.onclick = () => edit(() => { e['接続'] = a.text; });
+  const raw = (e['接続'] || '').trim();
+  const state = $('#connState');
+  if (!lanes.length) { box.innerHTML = '<p class="hint">先に ① で車線を入れてください。</p>'; state.textContent = '—'; state.className = 'st'; return; }
+  const {ok, items} = parseConn(raw, lanes.length);
+  if (!ok) { box.innerHTML = '<p class="hint">いまの接続は図で表せない書き方（1つの車線が2つに分かれる、書き間違いなど）です。下の「文字で編集する」で直してください。</p>'; state.textContent = '文字で入力'; state.className = 'st ng'; return; }
+  const auto = !raw;
+  const a = st.preview?.auto?.[e._id];
+  const shown = auto ? (a ? parseConn(a.text, lanes.length).items : items) : items;
+  const unresolved = auto ? (a?.unresolved || []) : items.map((it, j) => it.k ? 0 : j + 1).filter(Boolean);
+  state.textContent = auto ? (a ? (unresolved.length ? '自動補完：一部決まらない' : '自動補完') : '自動補完') : (unresolved.length ? `手入力：未指定 ${unresolved.length}` : '手入力');
+  state.className = 'st ' + (unresolved.length && next && nl.length ? 'ng' : 'ok');
+
+  // ミニ図: 上の段が次の行、下の段がこの行（運転席から見て前が上）
+  const W = 44, G = 6, TOP = 22, H = 34, BOT = 130, SIDE = 90;
+  const n1 = lanes.length, n2 = Math.max(nl.length, 1);
+  const inner = Math.max(n1, n2) * (W + G);
+  const width = inner + SIDE * 2, height = BOT + H + 22;
+  const xb = j => SIDE + (inner - n1 * (W + G)) / 2 + j * (W + G) + G / 2;
+  const xt = k => SIDE + (inner - nl.length * (W + G)) / 2 + k * (W + G) + G / 2;
+  let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  svg += `<text class="lbl" x="6" y="${TOP + H / 2 + 4}">次の行</text><text class="lbl" x="6" y="${BOT + H / 2 + 4}">この行</text>`;
+  if (next) svg += `<text class="lbl" x="${SIDE}" y="14">${esc(next['地点'])} ${esc(next['種別'])}${nl.length ? '' : '（車線が未入力）'}</text>`;
+  else svg += `<text class="lbl" x="${SIDE}" y="14">（この先の行はありません。側道への離脱だけ書けます）</text>`;
+  shown.forEach((it, j) => {
+    const x1 = xb(j) + W / 2, y1 = BOT, cls = 'lk' + (auto ? ' auto' : '') + (j === st.src ? ' sel' : '');
+    if (it.k === 'n' && it.d >= 1 && it.d <= nl.length) {
+      const x2 = xt(it.d - 1) + W / 2, y2 = TOP + H, ym = (y1 + y2) / 2;
+      svg += `<path class="${cls}" d="M${x1},${y1} C${x1},${ym} ${x2},${ym} ${x2},${y2}"/>`;
+    } else if (it.k === 'exit') {
+      const side = it.side || inferSide(lanes[j], j, lanes.length);
+      const xe = side === 'L' ? 22 : width - 22, ye = (TOP + H + BOT) / 2 + (side === 'L' ? -6 : 6);
+      svg += `<path class="${cls}" d="M${x1},${y1} C${x1},${ye} ${x1},${ye} ${xe},${ye}"/>`;
+      svg += `<text class="xname" x="${side === 'L' ? 4 : width - 4}" y="${ye - 9}" text-anchor="${side === 'L' ? 'start' : 'end'}">${esc(it.name || (side === 'L' ? '← 左へ' : '右へ →'))}</text>`;
+    } else if (it.k === 'x') {
+      svg += `<path class="${cls}" d="M${x1},${y1} L${x1},${y1 - 22}"/><text class="q" x="${x1}" y="${y1 - 28}" fill="#d92d20">×</text>`;
+    } else if (next && nl.length) {
+      svg += `<text class="q" x="${x1}" y="${y1 - 10}">?</text>`;
     }
-  }
-  const ri = $('#rowissues');
-  if (ri) {
+  });
+  nl.forEach((c, k) => {
+    svg += `<g class="ln ${st.src === null ? 'dim' : ''}" data-t="${k}"><rect x="${xt(k)}" y="${TOP}" width="${W}" height="${H}" rx="4"/><text x="${xt(k) + W / 2}" y="${TOP + H / 2}">${esc(GLYPH[c] || '?')}</text></g>`;
+  });
+  lanes.forEach((c, j) => {
+    svg += `<g class="ln src ${j === st.src ? 'sel' : ''}" data-s="${j}"><rect x="${xb(j)}" y="${BOT}" width="${W}" height="${H}" rx="4"/><text x="${xb(j) + W / 2}" y="${BOT + H / 2}">${esc(GLYPH[c] || '?')}</text></g>`;
+  });
+  svg += '</svg>';
+
+  const sel = st.src;
+  const it = sel !== null ? items[sel] : null;
+  const steps = st.src === null
+    ? '下の段（この行）の車線をクリックして選んでください。'
+    : `車線${sel + 1}を選択中：上の段（次の行）の車線をクリックするとつながります。曲がって出ていくなら「離脱」。`;
+  box.innerHTML = `<div class="connbox">${svg}</div>
+    <p class="hint">${steps}</p>
+    <div class="conntools">
+      <button class="btn s" data-act="L" ${sel === null ? 'disabled' : ''}>← 左へ離脱</button>
+      <button class="btn s" data-act="R" ${sel === null ? 'disabled' : ''}>右へ離脱 →</button>
+      <button class="btn s" data-act="x" ${sel === null ? 'disabled' : ''} title="行き先を決めずに途切れさせる">× 途切れ</button>
+      <button class="btn s" data-act="none" ${sel === null ? 'disabled' : ''}>この車線を未指定に</button>
+      <span class="spacer"></span>
+      <button class="btn s" data-act="auto" ${auto ? 'disabled' : ''} title="接続を空欄にして自動補完に任せます">自動補完に戻す</button>
+    </div>
+    ${it && it.k === 'exit' ? `<div class="grid2"><label>離脱先</label><input type="text" id="c-name" value="${esc(it.name || '')}" placeholder="空欄なら交差道路の名前を使います"></div>` : ''}
+    <div class="autonote ${auto && unresolved.length ? 'ng' : ''}" id="autonote"></div>`;
+
+  const setItems = fn => edit(() => {
+    const cur = parseConn(e['接続'], lanes.length).items;
+    const base = (e['接続'] || '').trim() ? cur : (a ? parseConn(a.text, lanes.length).items : cur);   // 自動の結果から手直しを始める
+    fn(base);
+    e['接続'] = buildConn(base, lanes);
+  });
+  box.querySelectorAll('.ln.src').forEach(g => g.onclick = () => { const j = +g.dataset.s; st.src = st.src === j ? null : j; renderConn(); });
+  box.querySelectorAll('.ln[data-t]').forEach(g => g.onclick = () => {
+    if (st.src === null) return;
+    const j = st.src, k = +g.dataset.t + 1;
+    setItems(b => { b[j] = (b[j].k === 'n' && b[j].d === k) ? {k:''} : {k:'n', d:k}; });
+    st.src = j + 1 < lanes.length ? j + 1 : null;   // 次の車線へ
+    renderConn();
+  });
+  box.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+    const act = b.dataset.act, j = st.src;
+    if (act === 'auto') { edit(() => { e['接続'] = ''; }); st.src = null; renderConn(); return; }
+    setItems(base => {
+      if (act === 'L' || act === 'R') base[j] = {k:'exit', side:act, name: base[j].k === 'exit' ? base[j].name : ''};
+      else if (act === 'x') base[j] = {k:'x'};
+      else base[j] = {k:''};
+    });
+    renderConn();
+  });
+  const nm = $('#c-name');
+  if (nm) nm.onchange = () => { setItems(base => { base[sel] = {...base[sel], name: nm.value}; }); renderConn(); };
+  const fc = $('#f-conn'); if (fc && document.activeElement !== fc) fc.value = e['接続'] || '';
+  renderAutoNote();
+}
+function renderAutoNote(){
+  const e = byId(st.sel); const box = $('#autonote'); if (!e || !box) return;
+  const raw = (e['接続'] || '').trim();
+  const a = st.preview?.auto?.[e._id];
+  if (raw) { box.innerHTML = `手入力の接続：<b>${esc(raw)}</b>`; box.className = 'autonote'; return; }
+  if (!a) { box.textContent = '空欄（自動補完）：次の行の車線が未入力か、最後の行なので、補う接続はありません。'; box.className = 'autonote'; return; }
+  box.className = 'autonote' + (a.unresolved.length ? ' ng' : '');
+  box.innerHTML = `空欄のままなので<b>自動補完</b>（点線）：${esc(a.text || 'なし')}` +
+    (a.unresolved.length ? `<br>車線${a.unresolved.join('・')}は自動では決められません。つなぎ先をクリックで指定してください。` : '<br>このままでよければ何もしなくて大丈夫です。手直ししたい車線をクリックすると、手入力に切り替わります。');
+}
+// 図の更新のたびに変わる所だけ描き直す
+function renderLive(){
+  renderConn();
+  const ri = $('#rowissues'); const e = byId(st.sel);
+  if (ri && e) {
     const iss = issuesOf(e._id);
     ri.innerHTML = iss.length ? iss.map(i => `<li class="lv-${esc(i.level)}">[${esc(i.level)}] ${esc(i.message)}</li>`).join('') : '<li class="muted">問題はありません</li>';
   }
@@ -503,21 +672,27 @@ function renderAutoAndIssues(){
 // ---- 図と検証結果
 function renderPreview(){
   const p = $('#preview');
+  p.className = 'preview' + (st.zoom === 'fit' ? ' fit' : '');
   const svg = st.preview?.svgs?.[st.dir]?.[st.view];
   p.innerHTML = svg || '<p class="muted">図を作っています…</p>';
   const line = lineOf(st.sel);
-  if (line) p.querySelectorAll(`[data-line="${line}"]`).forEach(el => {
-    el.classList.add('sel'); el.querySelectorAll('text').forEach(t => t.classList.add('sel'));
-  });
+  if (!line) return;
+  const els = p.querySelectorAll(`[data-line="${line}"]`);
+  els.forEach(el => { el.classList.add('sel'); el.querySelectorAll('text').forEach(t => t.classList.add('sel')); });
+  const first = els[0];
+  if (first) {   // 選んだ行が見えるように図をスクロール
+    const r = first.getBoundingClientRect(), c = p.getBoundingClientRect();
+    if (r.top < c.top + 20 || r.bottom > c.bottom - 20) p.scrollTop += r.top - c.top - c.height / 3;
+  }
 }
 function renderLint(){
   const iss = (st.preview?.issues || []).filter(i => !i.direction || i.direction === st.dir);
-  $('#lint').innerHTML = `<h3>検証結果（${esc(st.dir)}）</h3><ul>` + (iss.length ? iss.map(i =>
-    `<li class="lv-${esc(i.level)}" data-line="${i.line ?? ''}">[${esc(i.level)}] ${i.line ? i.line + '行目' : '全体'}${i.where ? ' [' + esc(i.where) + ']' : ''}: ${esc(i.message)}</li>`).join('')
-    : '<li class="muted">問題はありません</li>') + '</ul>';
-  $('#lint').querySelectorAll('li[data-line]').forEach(li => li.onclick = () => {
-    const id = idOfLine(+li.dataset.line); if (id) select(id);
-  });
+  const ne = iss.filter(i => i.level === 'エラー').length, nw = iss.filter(i => i.level === '警告').length;
+  $('#lintsum').textContent = `検証結果（${st.dir}）　エラー ${ne} ／ 警告 ${nw}`;
+  $('#lint').innerHTML = iss.length ? iss.map(i =>
+    `<li class="lv-${esc(i.level)}" data-line="${i.line ?? ''}">[${esc(i.level)}] ${i.line ? i.line + '行目' : '全体'}${i.where ? ' ' + esc(i.where) : ''}：${esc(i.message)}</li>`).join('')
+    : '<li class="muted">問題はありません</li>';
+  $('#lint').querySelectorAll('li[data-line]').forEach(li => li.onclick = () => { const id = idOfLine(+li.dataset.line); if (id) select(id); });
 }
 
 // ---------------------------------------------------------------- 行の操作
@@ -527,6 +702,13 @@ function newRow(base, extra){
   e['方向'] = base ? base['方向'] : (st.dir === 'その他' ? '' : st.dir);
   return Object.assign(e, extra || {});
 }
+function sortInsert(e, cur){
+  const rows = rowsOf(dirOf(e)).filter(r => r !== e);
+  const i = cur ? rows.indexOf(cur) : rows.length - 1;
+  rows.splice(i + 1, 0, e);
+  rows.forEach((r, k) => r['順'] = String(k + 1));
+  renumber(dirOf(e));
+}
 $('#add').onclick = () => edit(() => {
   const cur = byId(st.sel);
   // 手前の行の下には、同じ地点の直後の行を用意する（地点と種別だけ。車線などは空欄）
@@ -534,73 +716,55 @@ $('#add').onclick = () => edit(() => {
   const e = newRow(cur, extra);
   st.entries.splice(cur ? st.entries.indexOf(cur) + 1 : st.entries.length, 0, e);
   sortInsert(e, cur);
-  st.sel = e._id; st.lane = null;
+  st.sel = e._id; st.lane = st.src = null;
 });
-function sortInsert(e, cur){
-  // 一時的に cur の直後に並ぶよう順を決めてから振り直す
-  const rows = rowsOf(dirOf(e)).filter(r => r !== e);
-  const i = cur ? rows.indexOf(cur) : rows.length - 1;
-  rows.splice(i + 1, 0, e);
-  rows.forEach((r, k) => r['順'] = String(k + 1));
-  renumber(dirOf(e));
-}
 $('#dup').onclick = () => { const cur = byId(st.sel); if (!cur) return; edit(() => {
   const e = Object.assign(newRow(cur), JSON.parse(JSON.stringify(cur)), {_id: `n${Date.now()}_${++st.newId}`});
   st.entries.splice(st.entries.indexOf(cur) + 1, 0, e);
   sortInsert(e, cur); st.sel = e._id;
 }); };
-function move(d){
+function shift(d){
   const cur = byId(st.sel); if (!cur) return;
   const {rows, i} = neighbors(cur); const j = i + d;
   if (j < 0 || j >= rows.length) return;
   edit(() => { [rows[i], rows[j]] = [rows[j], rows[i]]; rows.forEach((r, k) => r['順'] = String(k + 1)); renumber(dirOf(cur)); });
 }
-$('#up').onclick = () => move(-1);
-$('#down').onclick = () => move(1);
+$('#up').onclick = () => shift(-1);
+$('#down').onclick = () => shift(1);
 $('#del').onclick = () => {
   const cur = byId(st.sel); if (!cur) return;
   const {rows, i} = neighbors(cur);
-  edit(() => {
-    st.entries.splice(st.entries.indexOf(cur), 1);
-    renumber(dirOf(cur));
-    st.sel = (rows[i+1] || rows[i-1])?._id || null;
-  });
+  edit(() => { st.entries.splice(st.entries.indexOf(cur), 1); renumber(dirOf(cur)); st.sel = (rows[i+1] || rows[i-1])?._id || null; });
   banner(`行を削除しました（${cur['地点'] || '地点なし'} ${cur['種別']}）。`, 'warn', [['元に戻す', () => { doUndo(); banner(''); }]]);
 };
 $('#nextBlank').onclick = () => {
   const rows = rowsOf(st.dir); const i = rows.findIndex(e => e._id === st.sel);
-  const order = [...rows.slice(i + 1), ...rows.slice(0, i + 1)];
-  const t = order.find(e => !lanesOf(e).length);
+  const t = [...rows.slice(i + 1), ...rows.slice(0, i + 1)].find(e => !lanesOf(e).length);
   if (t) select(t._id); else banner(`${st.dir} に車線が未入力の行はありません。`, 'ok');
 };
+$('#search').addEventListener('input', ev => { st.q = ev.target.value; renderList(); });
 $('#save').onclick = () => save();
 $('#undo').onclick = doUndo;
-$('#quit').onclick = async () => {
-  if (st.dirty) { banner('未保存の変更があります。保存してから終了するか、変更を捨てて終了してください。', 'warn',
-    [['保存して終了', async () => { await save(); if (!st.dirty) quit(); }], ['変更を捨てて終了', quit]]); return; }
+$('#quit').onclick = () => {
+  if (st.dirty) { banner('未保存の変更があります。', 'warn', [['保存して終了', async () => { await save(); if (!st.dirty) quit(); }], ['変更を捨てて終了', quit]]); return; }
   quit();
 };
-async function quit(){
-  st.dirty = false;
-  await api('/api/shutdown', {});
-  document.body.innerHTML = '<p style="padding:24px">エディタを終了しました。このタブは閉じてかまいません。</p>';
-}
-$('#preview').addEventListener('click', ev => {
-  const el = ev.target.closest('[data-line]'); if (!el) return;
-  const id = idOfLine(+el.dataset.line); if (id) select(id);
-});
+async function quit(){ st.dirty = false; await api('/api/shutdown', {}); document.body.innerHTML = '<p style="padding:24px">エディタを終了しました。このタブは閉じてかまいません。</p>'; }
+$('#preview').addEventListener('click', ev => { const el = ev.target.closest('[data-line]'); if (!el) return; const id = idOfLine(+el.dataset.line); if (id) select(id); });
+const help = show => { $('#help').classList.toggle('show', show); if (!show) store.set('lanemap.help.seen', '1'); };
+$('#helpBtn').onclick = () => help(true);
+$('#helpClose').onclick = () => help(false);
+$('#help').addEventListener('click', ev => { if (ev.target.id === 'help') help(false); });
 document.addEventListener('keydown', ev => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's') { ev.preventDefault(); save(); }
   else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !typing) { ev.preventDefault(); doUndo(); }
-  else if (ev.altKey && ev.shiftKey && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) { ev.preventDefault(); move(ev.key === 'ArrowUp' ? -1 : 1); }
-  else if (ev.altKey && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
-    ev.preventDefault();
-    const rows = rowsOf(st.dir); const i = rows.findIndex(e => e._id === st.sel);
-    const t = rows[i + (ev.key === 'ArrowUp' ? -1 : 1)]; if (t) select(t._id);
-  }
+  else if (ev.key === 'Escape') help(false);
+  else if (ev.altKey && ev.shiftKey && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) { ev.preventDefault(); shift(ev.key === 'ArrowUp' ? -1 : 1); }
+  else if (ev.altKey && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) { ev.preventDefault(); move(ev.key === 'ArrowUp' ? -1 : 1); }
 });
 window.addEventListener('beforeunload', ev => { if (st.dirty) { ev.preventDefault(); ev.returnValue = ''; } });
+if (!store.get('lanemap.help.seen')) help(true);
 load();
 </script>
 </body>
