@@ -217,8 +217,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
   <section class="col"><div class="form" id="form"></div></section>
   <section class="col">
     <div class="ptools">
-      <span class="small muted">図の向き</span>
-      <span class="seg" id="views"><button data-v="map" data-title="運転者の左が画面の右になります" title="運転者の左が画面の右になります">上空から</button><button data-v="csv" data-title="車線1が画面の左になります（鏡像）" title="車線1が画面の左になります（鏡像）">入力どおり</button></span>
+      <span class="small muted">進行方向が上（下から上へ進む）</span>
       <span class="small muted">大きさ</span>
       <span class="seg" id="zoom"><button data-z="fit">幅に合わせる</button><button data-z="1">等倍</button></span>
       <span class="small muted">図をクリックするとその行を選びます</span>
@@ -254,7 +253,7 @@ const GLYPH = {L:'↰',S:'↑',R:'↱',SL:'↰↑',SR:'↑↱',LSR:'↰↑↱',B
 const CODE_NAME = {L:'左折専用',S:'直進',R:'右折専用',SL:'直進・左折',SR:'直進・右折',LSR:'全方向',B:'バス','?':'不明'};
 const KIND_WHAT = {'手前':'停止線の手前の車線', '直後':'交差点を抜けた直後の車線', '区間中':'交差点のあいだの途中の車線'};
 const CONFS = [['確','現地・SVで確認'],['資','資料にある'],['推','推定'],['','空欄（不明）']];
-const st = {header:[], entries:[], codes:[], kinds:[], directions:[], dir:'南行き', view:'map', zoom:'fit', filter:'all', q:'',
+const st = {header:[], entries:[], codes:[], kinds:[], directions:[], dir:'南行き', zoom:'fit', filter:'all', q:'',
   sel:null, lane:null, src:null, dirty:false, preview:null, undo:[], seq:0, newId:0, pendingUndo:false};
 
 const $ = s => document.querySelector(s);
@@ -382,12 +381,6 @@ function renderDirs(){
   $('#dirs').innerHTML = dirList().map(d => `<button data-d="${esc(d)}" class="${d === st.dir ? 'on' : ''}">${esc(d)}</button>`).join('');
   $('#dirs').querySelectorAll('button').forEach(b => b.onclick = () => {
     st.dir = b.dataset.d; st.sel = rowsOf(st.dir)[0]?._id || null; st.lane = st.src = null; renderAll();
-  });
-  const up = st.dir === '北行き';   // 北行きは下から上へ進む図で、向きによらず同じ
-  $('#views').querySelectorAll('button').forEach(b => {
-    b.classList.toggle('on', !up && b.dataset.v === st.view); b.disabled = up;
-    b.title = up ? '北行きは下から上へ進む図で、運転者の左が画面の左になります（向きによらず同じ）' : b.dataset.title || b.title;
-    b.onclick = () => { st.view = b.dataset.v; renderDirs(); renderPreview(); };
   });
   $('#zoom').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.z === st.zoom); b.onclick = () => { st.zoom = b.dataset.z; renderDirs(); renderPreview(); }; });
   $('#filters').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.f === st.filter); b.onclick = () => { st.filter = b.dataset.f; renderDirs(); renderList(); }; });
@@ -678,7 +671,7 @@ function renderLive(){
 function renderPreview(){
   const p = $('#preview');
   p.className = 'preview' + (st.zoom === 'fit' ? ' fit' : '');
-  const svg = st.preview?.svgs?.[st.dir]?.[st.view];
+  const svg = st.preview?.svgs?.[st.dir];
   p.innerHTML = svg || '<p class="muted">図を作っています…</p>';
   const line = lineOf(st.sel);
   if (!line) return;

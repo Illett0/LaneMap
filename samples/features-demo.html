@@ -30,13 +30,12 @@ main{padding:16px;display:grid;gap:16px}
 <body data-dir="南行き">
 <header><h1>車線接続図（features-demo.csv）</h1>
 <span class="seg"><button data-set-dir="南行き">南行き</button><button data-set-dir="北行き">北行き</button></span>
-<span><span class="lbl">向き</span><span class="seg"><button data-set-view="map">上空から見た向き</button><button data-set-view="csv">CSV の並び順</button></span></span>
 <span class="count">エラー 0 / 警告 5 / 情報 0</span>
 </header>
 <main>
 <section class="card"><h2>凡例</h2><div class="legend"><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ln c-k" x="12" y="2" width="20" height="30" rx="3"/></svg><span>確：現地・ストリートビューで確認</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ln c-s" x="12" y="2" width="20" height="30" rx="3"/></svg><span>資：資料にある</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ln c-p" x="12" y="2" width="20" height="30" rx="3"/></svg><span>推：推定</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ln c-u" x="12" y="2" width="20" height="30" rx="3"/></svg><span>空欄：確度不明</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><path class="rb c-k" d="M4,2 C4,17 22,17 22,32 L25,32 C25,17 18,17 18,2 Z"/><path class="rb c-k" d="M22,2 C22,17 22,17 22,32 L36,32 C36,17 36,17 36,2 Z"/></svg><span>合流（細くして寄せる）</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><path class="ex c-k" d="M10,2 C10,22 10,22 28,22"/><polygon class="ah c-k" points="28,14 40,22 28,30"/></svg><span>側道へ離脱</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><path class="rb c-k" d="M13,2 C13,17 14,17 14,32 L32,32 C32,17 15,17 15,2 Z"/></svg><span>新しく現れる車線</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><rect class="ph" x="8" y="2" width="28" height="30" rx="3"/></svg><span>未入力</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><path class="stub" d="M22,2 L22,16"/><text class="q" x="22" y="30">?</text></svg><span>対応未定（接続を入力）</span></span><span class="lg"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="44" height="34" viewBox="0 0 44 34"><line class="stop" x1="6" y1="17" x2="38" y2="17"/></svg><span>停止線（手前の行）</span></span></div>
-<p class="note">北が上になるように、南行きは上から下へ、北行きは下から上へ進む図です。矢印は路面標示（↰ ↑ ↱）を図の進む向きに合わせて回しています。空欄のデータは推測で埋めず「未入力」「対応未定」と描きます。</p></section>
-<div class="pane card" data-dir="南行き" data-view="map"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="694" height="662" viewBox="0 0 694 662" data-direction="南行き" data-view="map"><style>
+<p class="note">南行き・北行きとも進行方向が上（下から上へ進む）、運転席から前を見た向きの図です。矢印は路面標示（↰ ↑ ↱）のとおりです。空欄のデータは推測で埋めず「未入力」「対応未定」と描きます。</p></section>
+<div class="pane card" data-dir="南行き"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="694" height="662" viewBox="0 0 694 662" data-direction="南行き"><style>
 .lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
 .lm .ttl{font-size:17px;font-weight:700}
 .lm .cap{font-size:12px;fill:#52606d}
@@ -72,139 +71,7 @@ main{padding:16px;display:grid;gap:16px}
 .lm .flow{font-size:12px;fill:#52606d;text-anchor:middle}
 .lm .sel{stroke:#f08c00 !important;stroke-width:3.5 !important;stroke-dasharray:none !important}
 .lm text.sel{fill:#f08c00;stroke:none !important}
-</style><rect width="100%" height="100%" fill="#fff"/><g><rect class="strip" x="210" y="101" width="476" height="30"/><line class="stripedge" x1="210" y1="101" x2="686" y2="101"/><line class="stripedge" x1="210" y1="131" x2="686" y2="131"/><rect class="strip" x="210" y="381" width="476" height="30"/><line class="stripedge" x1="210" y1="381" x2="686" y2="381"/><line class="stripedge" x1="210" y1="411" x2="686" y2="411"/><path class="rb c-s" data-line="3" d="M496,204 C496,246 496,246 496,288 L534,288 C534,246 534,246 534,204 Z"><title>3行目 車線1 → 4行目 車線1</title></path><path class="rb c-s" data-line="3" d="M454,204 C454,246 454,246 454,288 L492,288 C492,246 492,246 492,204 Z"><title>3行目 車線2 → 4行目 車線2</title></path><path class="rb c-s" data-line="3" d="M370,204 C370,227.1 412,227.1 412,250.2 L415,250.2 C415,227.1 408,227.1 408,204 Z"><title>3行目 車線4 → 4行目 車線3（合流）</title></path><path class="rb c-s" data-line="3" d="M412,204 C412,246 412,246 412,288 L450,288 C450,246 450,246 450,204 Z"><title>3行目 車線3 → 4行目 車線3（合流）</title></path><path class="rb c-s" data-line="4" d="M407,254.4 C407,271.2 370,271.2 370,288 L408,288 C408,271.2 409,271.2 409,254.4 Z"><title>4行目 車線4：ここから現れる車線</title></path><path class="rb c-p" data-line="4" d="M496,338 C496,396 496,396 496,454 L534,454 C534,396 534,396 534,338 Z"><title>4行目 車線1 → 5行目 車線1</title></path><path class="rb c-p" data-line="4" d="M454,338 C454,396 454,396 454,454 L492,454 C492,396 492,396 492,338 Z"><title>4行目 車線2 → 5行目 車線2</title></path><path class="rb c-p" data-line="4" d="M412,338 C412,396 412,396 412,454 L450,454 C450,396 450,396 450,338 Z"><title>4行目 車線3 → 5行目 車線3</title></path><path class="ex c-s" data-line="4" d="M389,338 C389,396 389,396 326,396"><title>4行目 車線4：見本通へ離脱</title></path><polygon class="ah c-s" points="326,387 312,396 326,405"/><path class="stub" d="M431,504 L431,522"/><rect class="ln c-k" data-line="3" x="496" y="154" width="38" height="50" rx="3"><title>車線1: B
-3行目 南行き 順1 見本交差点A 直後
-車線: B S S S
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;3
-確度: 確
-出典: 見本
-メモ: 4番目の車線が3番目に合流</title></rect><rect class="ln c-k" data-line="3" x="454" y="154" width="38" height="50" rx="3"><title>車線2: S
-3行目 南行き 順1 見本交差点A 直後
-車線: B S S S
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;3
-確度: 確
-出典: 見本
-メモ: 4番目の車線が3番目に合流</title></rect><rect class="ln c-k" data-line="3" x="412" y="154" width="38" height="50" rx="3"><title>車線3: S
-3行目 南行き 順1 見本交差点A 直後
-車線: B S S S
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;3
-確度: 確
-出典: 見本
-メモ: 4番目の車線が3番目に合流</title></rect><rect class="ln c-k" data-line="3" x="370" y="154" width="38" height="50" rx="3"><title>車線4: S
-3行目 南行き 順1 見本交差点A 直後
-車線: B S S S
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;3
-確度: 確
-出典: 見本
-メモ: 4番目の車線が3番目に合流</title></rect><rect class="ln c-s" data-line="4" x="496" y="288" width="38" height="50" rx="3"><title>車線1: B
-4行目 南行き 順2 見本交差点B 手前
-車線: B S S R
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;@
-確度: 資
-出典: 見本
-交差道路: 見本通
-メモ: 右折ポケットは接続の行き先になっていないので出現として描く</title></rect><rect class="ln c-s" data-line="4" x="454" y="288" width="38" height="50" rx="3"><title>車線2: S
-4行目 南行き 順2 見本交差点B 手前
-車線: B S S R
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;@
-確度: 資
-出典: 見本
-交差道路: 見本通
-メモ: 右折ポケットは接続の行き先になっていないので出現として描く</title></rect><rect class="ln c-s" data-line="4" x="412" y="288" width="38" height="50" rx="3"><title>車線3: S
-4行目 南行き 順2 見本交差点B 手前
-車線: B S S R
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;@
-確度: 資
-出典: 見本
-交差道路: 見本通
-メモ: 右折ポケットは接続の行き先になっていないので出現として描く</title></rect><rect class="ln c-s" data-line="4" x="370" y="288" width="38" height="50" rx="3"><title>車線4: R
-4行目 南行き 順2 見本交差点B 手前
-車線: B S S R
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;@
-確度: 資
-出典: 見本
-交差道路: 見本通
-メモ: 右折ポケットは接続の行き先になっていないので出現として描く</title></rect><line class="stop" x1="367" y1="340" x2="537" y2="340"><title>停止線</title></line><rect class="ln c-p" data-line="5" x="496" y="454" width="38" height="50" rx="3"><title>車線1: B
-5行目 南行き 順3 見本交差点B 直後
-車線: B S S
-接続: 1&gt;1 2&gt;2 3&gt;x
-確度: 推
-出典: 見本
-メモ: 3番目は途切れ（警告）</title></rect><rect class="ln c-p" data-line="5" x="454" y="454" width="38" height="50" rx="3"><title>車線2: S
-5行目 南行き 順3 見本交差点B 直後
-車線: B S S
-接続: 1&gt;1 2&gt;2 3&gt;x
-確度: 推
-出典: 見本
-メモ: 3番目は途切れ（警告）</title></rect><rect class="ln c-p" data-line="5" x="412" y="454" width="38" height="50" rx="3"><title>車線3: S
-5行目 南行き 順3 見本交差点B 直後
-車線: B S S
-接続: 1&gt;1 2&gt;2 3&gt;x
-確度: 推
-出典: 見本
-メモ: 3番目は途切れ（警告）</title></rect><rect class="ph" data-line="6" x="412" y="588" width="122" height="50" rx="4"><title>6行目 南行き 順4 見本区間 区間中
-車線: 未入力
-接続: （空欄）
-確度: 不明
-出典: —
-メモ: 未入力の行</title></rect></g><text class="gl bus on-k" x="515" y="179">バス</text><text class="gl on-k t1" x="473" y="179" transform="rotate(180 473 179)">↑</text><text class="gl on-k t1" x="431" y="179" transform="rotate(180 431 179)">↑</text><text class="gl on-k t1" x="389" y="179" transform="rotate(180 389 179)">↑</text><text class="gl bus on-s" x="515" y="313">バス</text><text class="gl on-s t1" x="473" y="313" transform="rotate(180 473 313)">↑</text><text class="gl on-s t1" x="431" y="313" transform="rotate(180 431 313)">↑</text><text class="gl on-s t1" x="389" y="313" transform="rotate(180 389 313)">↱</text><text class="gl bus on-p" x="515" y="479">バス</text><text class="gl on-p t1" x="473" y="479" transform="rotate(180 473 479)">↑</text><text class="gl on-p t1" x="431" y="479" transform="rotate(180 431 479)">↑</text><text class="ttl" x="16" y="28">南行き：見本交差点A → 見本区間</text><text class="cap" x="16" y="48">上空から見た向き（北が上。運転者の左＝画面の右）　線の見た目は確度（凡例）</text><text class="flow" x="452" y="68">進行方向 ↓</text><text class="stripname" x="24" y="120">┄ 見本交差点A</text><text class="stripname" x="24" y="400">┄ 見本通（見本交差点B）</text><text class="cut" x="431" y="540">×<title>5行目 車線3：行き先を指定せず途切れる</title></text><g data-line="3"><title>3行目 南行き 順1 見本交差点A 直後
-車線: B S S S
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;3
-確度: 確
-出典: 見本
-メモ: 4番目の車線が3番目に合流</title><text class="pt" x="16" y="174">見本交差点A</text><rect x="16" y="182" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="194" text-anchor="middle">直後</text><text class="sub" x="56" y="194">確度:確　3行目</text></g><g data-line="4"><title>4行目 南行き 順2 見本交差点B 手前
-車線: B S S R
-接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;@
-確度: 資
-出典: 見本
-交差道路: 見本通
-メモ: 右折ポケットは接続の行き先になっていないので出現として描く</title><text class="pt" x="16" y="308">見本交差点B</text><rect x="16" y="316" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="328" text-anchor="middle">手前</text><text class="sub" x="56" y="328">確度:資　4行目</text></g><g data-line="5"><title>5行目 南行き 順3 見本交差点B 直後
-車線: B S S
-接続: 1&gt;1 2&gt;2 3&gt;x
-確度: 推
-出典: 見本
-メモ: 3番目は途切れ（警告）</title><text class="pt" x="16" y="474">見本交差点B</text><rect x="16" y="482" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="494" text-anchor="middle">直後</text><text class="sub" x="56" y="494">確度:推　5行目</text></g><text class="phtext" x="473" y="613">未入力</text><g data-line="6"><title>6行目 南行き 順4 見本区間 区間中
-車線: 未入力
-接続: （空欄）
-確度: 不明
-出典: —
-メモ: 未入力の行</title><text class="pt" x="16" y="608">見本区間</text><rect x="16" y="616" width="46" height="16" rx="3" fill="#6b7280"/><text class="badge" x="39.0" y="628" text-anchor="middle">区間中</text><text class="sub" x="68" y="628">確度:不明　6行目</text></g></svg></div><div class="pane card" data-dir="南行き" data-view="csv"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="694" height="662" viewBox="0 0 694 662" data-direction="南行き" data-view="csv"><style>
-.lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
-.lm .ttl{font-size:17px;font-weight:700}
-.lm .cap{font-size:12px;fill:#52606d}
-.lm .pt{font-size:14px;font-weight:700}
-.lm .sub{font-size:11px;fill:#52606d}
-.lm .badge{font-size:11px;font-weight:700;fill:#fff}
-.lm .strip{fill:#e9ecef}
-.lm .stripedge{stroke:#adb5bd;stroke-width:1}
-.lm .stripname{font-size:12px;fill:#495057;font-weight:700}
-.lm .stripend{font-size:11px;fill:#495057}
-.lm .stop{stroke:#1f2933;stroke-width:3.5}
-.lm .ln,.lm .rb{stroke-width:1.5}
-.lm .ln.c-k,.lm .rb.c-k{fill:#2f5f98;stroke:#2f5f98}
-.lm .ln.c-s,.lm .rb.c-s{fill:#a8c0df;stroke:#87a6cf}
-.lm .ln.c-p,.lm .rb.c-p{fill:#e7eef8;stroke:#2f5f98;stroke-dasharray:5 3}
-.lm .ln.c-u,.lm .rb.c-u{fill:#f3f3f3;stroke:#9aa0a6;stroke-dasharray:1.5 3}
-.lm .ln.bad{stroke:#d92d20;stroke-width:2.5;stroke-dasharray:none}
-.lm .ex{fill:none;stroke-width:12}
-.lm .ex.c-k{stroke:#2f5f98}.lm .ex.c-s{stroke:#a8c0df}
-.lm .ex.c-p{stroke:#2f5f98;stroke-dasharray:7 5}.lm .ex.c-u{stroke:#9aa0a6;stroke-dasharray:2 4}
-.lm .ah.c-k,.lm .ah.c-p{fill:#2f5f98}.lm .ah.c-s{fill:#a8c0df}.lm .ah.c-u{fill:#9aa0a6}
-.lm .gl{font-size:20px;text-anchor:middle;dominant-baseline:central;fill:#17324d}
-.lm .gl.on-k{fill:#fff}.lm .gl.on-u{fill:#5f6368}
-.lm .gl.t2{font-size:15px}.lm .gl.t3{font-size:12px}.lm .gl.bus{font-size:12px;font-weight:700}
-.lm .exname{font-size:12px;font-weight:700;fill:#1f2933;paint-order:stroke;stroke:#fff;stroke-width:3px}
-.lm .ph{fill:#fafafa;stroke:#9aa0a6;stroke-width:1.2;stroke-dasharray:2 3}
-.lm .phtext{font-size:12px;fill:#7b8794;text-anchor:middle;dominant-baseline:central}
-.lm .stub{fill:none;stroke:#9aa0a6;stroke-width:3;stroke-dasharray:3 3}
-.lm .blank{fill:none;stroke:#c3c7cc;stroke-width:2;stroke-dasharray:2 5}
-.lm .q{font-size:13px;font-weight:700;fill:#b54708;text-anchor:middle}
-.lm .warn{font-size:12px;font-weight:700;fill:#b54708;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:4px}
-.lm .cut{font-size:18px;font-weight:700;fill:#d92d20;text-anchor:middle}
-.lm .flow{font-size:12px;fill:#52606d;text-anchor:middle}
-.lm .sel{stroke:#f08c00 !important;stroke-width:3.5 !important;stroke-dasharray:none !important}
-.lm text.sel{fill:#f08c00;stroke:none !important}
-</style><rect width="100%" height="100%" fill="#fff"/><g><rect class="strip" x="210" y="101" width="476" height="30"/><line class="stripedge" x1="210" y1="101" x2="686" y2="101"/><line class="stripedge" x1="210" y1="131" x2="686" y2="131"/><rect class="strip" x="210" y="381" width="476" height="30"/><line class="stripedge" x1="210" y1="381" x2="686" y2="381"/><line class="stripedge" x1="210" y1="411" x2="686" y2="411"/><path class="rb c-s" data-line="3" d="M370,204 C370,246 370,246 370,288 L408,288 C408,246 408,246 408,204 Z"><title>3行目 車線1 → 4行目 車線1</title></path><path class="rb c-s" data-line="3" d="M412,204 C412,246 412,246 412,288 L450,288 C450,246 450,246 450,204 Z"><title>3行目 車線2 → 4行目 車線2</title></path><path class="rb c-s" data-line="3" d="M496,204 C496,227.1 489,227.1 489,250.2 L492,250.2 C492,227.1 534,227.1 534,204 Z"><title>3行目 車線4 → 4行目 車線3（合流）</title></path><path class="rb c-s" data-line="3" d="M454,204 C454,246 454,246 454,288 L492,288 C492,246 492,246 492,204 Z"><title>3行目 車線3 → 4行目 車線3（合流）</title></path><path class="rb c-s" data-line="4" d="M495,254.4 C495,271.2 496,271.2 496,288 L534,288 C534,271.2 497,271.2 497,254.4 Z"><title>4行目 車線4：ここから現れる車線</title></path><path class="rb c-p" data-line="4" d="M370,338 C370,396 370,396 370,454 L408,454 C408,396 408,396 408,338 Z"><title>4行目 車線1 → 5行目 車線1</title></path><path class="rb c-p" data-line="4" d="M412,338 C412,396 412,396 412,454 L450,454 C450,396 450,396 450,338 Z"><title>4行目 車線2 → 5行目 車線2</title></path><path class="rb c-p" data-line="4" d="M454,338 C454,396 454,396 454,454 L492,454 C492,396 492,396 492,338 Z"><title>4行目 車線3 → 5行目 車線3</title></path><path class="ex c-s" data-line="4" d="M515,338 C515,396 515,396 578,396"><title>4行目 車線4：見本通へ離脱</title></path><polygon class="ah c-s" points="578,387 592,396 578,405"/><path class="stub" d="M473,504 L473,522"/><rect class="ln c-k" data-line="3" x="370" y="154" width="38" height="50" rx="3"><title>車線1: B
+</style><rect width="100%" height="100%" fill="#fff"/><g transform="matrix(1 0 0 -1 0 716)"><rect class="strip" x="210" y="101" width="476" height="30"/><line class="stripedge" x1="210" y1="101" x2="686" y2="101"/><line class="stripedge" x1="210" y1="131" x2="686" y2="131"/><rect class="strip" x="210" y="381" width="476" height="30"/><line class="stripedge" x1="210" y1="381" x2="686" y2="381"/><line class="stripedge" x1="210" y1="411" x2="686" y2="411"/><path class="rb c-s" data-line="3" d="M370,204 C370,246 370,246 370,288 L408,288 C408,246 408,246 408,204 Z"><title>3行目 車線1 → 4行目 車線1</title></path><path class="rb c-s" data-line="3" d="M412,204 C412,246 412,246 412,288 L450,288 C450,246 450,246 450,204 Z"><title>3行目 車線2 → 4行目 車線2</title></path><path class="rb c-s" data-line="3" d="M496,204 C496,227.1 489,227.1 489,250.2 L492,250.2 C492,227.1 534,227.1 534,204 Z"><title>3行目 車線4 → 4行目 車線3（合流）</title></path><path class="rb c-s" data-line="3" d="M454,204 C454,246 454,246 454,288 L492,288 C492,246 492,246 492,204 Z"><title>3行目 車線3 → 4行目 車線3（合流）</title></path><path class="rb c-s" data-line="4" d="M495,254.4 C495,271.2 496,271.2 496,288 L534,288 C534,271.2 497,271.2 497,254.4 Z"><title>4行目 車線4：ここから現れる車線</title></path><path class="rb c-p" data-line="4" d="M370,338 C370,396 370,396 370,454 L408,454 C408,396 408,396 408,338 Z"><title>4行目 車線1 → 5行目 車線1</title></path><path class="rb c-p" data-line="4" d="M412,338 C412,396 412,396 412,454 L450,454 C450,396 450,396 450,338 Z"><title>4行目 車線2 → 5行目 車線2</title></path><path class="rb c-p" data-line="4" d="M454,338 C454,396 454,396 454,454 L492,454 C492,396 492,396 492,338 Z"><title>4行目 車線3 → 5行目 車線3</title></path><path class="ex c-s" data-line="4" d="M515,338 C515,396 515,396 578,396"><title>4行目 車線4：見本通へ離脱</title></path><polygon class="ah c-s" points="578,387 592,396 578,405"/><path class="stub" d="M473,504 L473,522"/><rect class="ln c-k" data-line="3" x="370" y="154" width="38" height="50" rx="3"><title>車線1: B
 3行目 南行き 順1 見本交差点A 直後
 車線: B S S S
 接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;3
@@ -279,28 +146,28 @@ main{padding:16px;display:grid;gap:16px}
 接続: （空欄）
 確度: 不明
 出典: —
-メモ: 未入力の行</title></rect></g><text class="gl bus on-k" x="389" y="179">バス</text><text class="gl on-k t1" x="431" y="179" transform="translate(0 358) scale(1 -1)">↑</text><text class="gl on-k t1" x="473" y="179" transform="translate(0 358) scale(1 -1)">↑</text><text class="gl on-k t1" x="515" y="179" transform="translate(0 358) scale(1 -1)">↑</text><text class="gl bus on-s" x="389" y="313">バス</text><text class="gl on-s t1" x="431" y="313" transform="translate(0 626) scale(1 -1)">↑</text><text class="gl on-s t1" x="473" y="313" transform="translate(0 626) scale(1 -1)">↑</text><text class="gl on-s t1" x="515" y="313" transform="translate(0 626) scale(1 -1)">↱</text><text class="gl bus on-p" x="389" y="479">バス</text><text class="gl on-p t1" x="431" y="479" transform="translate(0 958) scale(1 -1)">↑</text><text class="gl on-p t1" x="473" y="479" transform="translate(0 958) scale(1 -1)">↑</text><text class="ttl" x="16" y="28">南行き：見本交差点A → 見本区間</text><text class="cap" x="16" y="48">CSV の並び順（車線1＝画面の左。左右は鏡像）　線の見た目は確度（凡例）</text><text class="flow" x="452" y="68">進行方向 ↓</text><text class="stripname" x="24" y="120">┄ 見本交差点A</text><text class="stripname" x="24" y="400">┄ 見本通（見本交差点B）</text><text class="cut" x="473" y="540">×<title>5行目 車線3：行き先を指定せず途切れる</title></text><g data-line="3"><title>3行目 南行き 順1 見本交差点A 直後
+メモ: 未入力の行</title></rect></g><text class="gl bus on-k" x="389" y="537">バス</text><text class="gl on-k t1" x="431" y="537">↑</text><text class="gl on-k t1" x="473" y="537">↑</text><text class="gl on-k t1" x="515" y="537">↑</text><text class="gl bus on-s" x="389" y="403">バス</text><text class="gl on-s t1" x="431" y="403">↑</text><text class="gl on-s t1" x="473" y="403">↑</text><text class="gl on-s t1" x="515" y="403">↱</text><text class="gl bus on-p" x="389" y="237">バス</text><text class="gl on-p t1" x="431" y="237">↑</text><text class="gl on-p t1" x="473" y="237">↑</text><text class="ttl" x="16" y="28">南行き：見本交差点A → 見本区間</text><text class="cap" x="16" y="48">進行方向が上（運転席から前を見た向き。左の車線が画面の左）　線の見た目は確度（凡例）</text><text class="flow" x="452" y="68">進行方向 ↑（下から上へ）</text><text class="stripname" x="24" y="604">┄ 見本交差点A</text><text class="stripname" x="24" y="324">┄ 見本通（見本交差点B）</text><text class="cut" x="473" y="188">×<title>5行目 車線3：行き先を指定せず途切れる</title></text><g data-line="3"><title>3行目 南行き 順1 見本交差点A 直後
 車線: B S S S
 接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;3
 確度: 確
 出典: 見本
-メモ: 4番目の車線が3番目に合流</title><text class="pt" x="16" y="174">見本交差点A</text><rect x="16" y="182" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="194" text-anchor="middle">直後</text><text class="sub" x="56" y="194">確度:確　3行目</text></g><g data-line="4"><title>4行目 南行き 順2 見本交差点B 手前
+メモ: 4番目の車線が3番目に合流</title><text class="pt" x="16" y="532">見本交差点A</text><rect x="16" y="540" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="552" text-anchor="middle">直後</text><text class="sub" x="56" y="552">確度:確　3行目</text></g><g data-line="4"><title>4行目 南行き 順2 見本交差点B 手前
 車線: B S S R
 接続: 1&gt;1 2&gt;2 3&gt;3 4&gt;@
 確度: 資
 出典: 見本
 交差道路: 見本通
-メモ: 右折ポケットは接続の行き先になっていないので出現として描く</title><text class="pt" x="16" y="308">見本交差点B</text><rect x="16" y="316" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="328" text-anchor="middle">手前</text><text class="sub" x="56" y="328">確度:資　4行目</text></g><g data-line="5"><title>5行目 南行き 順3 見本交差点B 直後
+メモ: 右折ポケットは接続の行き先になっていないので出現として描く</title><text class="pt" x="16" y="398">見本交差点B</text><rect x="16" y="406" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="418" text-anchor="middle">手前</text><text class="sub" x="56" y="418">確度:資　4行目</text></g><g data-line="5"><title>5行目 南行き 順3 見本交差点B 直後
 車線: B S S
 接続: 1&gt;1 2&gt;2 3&gt;x
 確度: 推
 出典: 見本
-メモ: 3番目は途切れ（警告）</title><text class="pt" x="16" y="474">見本交差点B</text><rect x="16" y="482" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="494" text-anchor="middle">直後</text><text class="sub" x="56" y="494">確度:推　5行目</text></g><text class="phtext" x="431" y="613">未入力</text><g data-line="6"><title>6行目 南行き 順4 見本区間 区間中
+メモ: 3番目は途切れ（警告）</title><text class="pt" x="16" y="232">見本交差点B</text><rect x="16" y="240" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="252" text-anchor="middle">直後</text><text class="sub" x="56" y="252">確度:推　5行目</text></g><text class="phtext" x="431" y="103">未入力</text><g data-line="6"><title>6行目 南行き 順4 見本区間 区間中
 車線: 未入力
 接続: （空欄）
 確度: 不明
 出典: —
-メモ: 未入力の行</title><text class="pt" x="16" y="608">見本区間</text><rect x="16" y="616" width="46" height="16" rx="3" fill="#6b7280"/><text class="badge" x="39.0" y="628" text-anchor="middle">区間中</text><text class="sub" x="68" y="628">確度:不明　6行目</text></g></svg></div><div class="pane card" data-dir="北行き" data-view="map"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="652" height="452" viewBox="0 0 652 452" data-direction="北行き" data-view="map"><style>
+メモ: 未入力の行</title><text class="pt" x="16" y="98">見本区間</text><rect x="16" y="106" width="46" height="16" rx="3" fill="#6b7280"/><text class="badge" x="39.0" y="118" text-anchor="middle">区間中</text><text class="sub" x="68" y="118">確度:不明　6行目</text></g></svg></div><div class="pane card" data-dir="北行き"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="652" height="452" viewBox="0 0 652 452" data-direction="北行き"><style>
 .lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
 .lm .ttl{font-size:17px;font-weight:700}
 .lm .cap{font-size:12px;fill:#52606d}
@@ -374,99 +241,7 @@ main{padding:16px;display:grid;gap:16px}
 車線: S S
 接続: （空欄）
 確度: 確
-出典: 見本</title></rect></g><text class="gl on-k t1" x="389" y="403">↑</text><text class="gl on-k t1" x="431" y="403">↑</text><text class="gl on-k t1" x="389" y="269">↰</text><text class="gl on-k t1" x="431" y="269">↑</text><text class="gl on-k t1" x="473" y="269">↑</text><text class="gl on-k t1" x="431" y="103">↑</text><text class="gl on-k t1" x="473" y="103">↑</text><text class="ttl" x="16" y="28">北行き：見本区間 → 見本交差点B</text><text class="cap" x="16" y="48">北が上。下から上へ進む（運転者の左＝画面の左。どちらの向きでも同じ図）　線の見た目は確度（凡例）</text><text class="flow" x="431" y="68">進行方向 ↑（下から上へ）</text><text class="stripname" x="24" y="190">┄ 見本通（見本交差点B）</text><text class="q" x="389" y="355">?</text><text class="q" x="431" y="355">?</text><text class="q" x="389" y="326">?</text><text class="q" x="431" y="326">?</text><text class="q" x="473" y="326">?</text><text class="warn" x="431" y="340">対応未定<title>7行目 北行き 順1 見本区間 区間中
-→ 8行目へ
-車線: S S
-接続: （空欄）
-確度: 確
-出典: 見本</title></text><g data-line="7"><title>7行目 北行き 順1 見本区間 区間中
-車線: S S
-接続: （空欄）
-確度: 確
-出典: 見本</title><text class="pt" x="16" y="398">見本区間</text><rect x="16" y="406" width="46" height="16" rx="3" fill="#6b7280"/><text class="badge" x="39.0" y="418" text-anchor="middle">区間中</text><text class="sub" x="68" y="418">確度:確　7行目</text></g><g data-line="8"><title>8行目 北行き 順2 見本交差点B 手前
-車線: L S S
-接続: （空欄）
-確度: 確
-出典: 見本
-交差道路: 見本通</title><text class="pt" x="16" y="264">見本交差点B</text><rect x="16" y="272" width="34" height="16" rx="3" fill="#c2410c"/><text class="badge" x="33.0" y="284" text-anchor="middle">手前</text><text class="sub" x="56" y="284">確度:確　8行目</text></g><g data-line="9"><title>9行目 北行き 順3 見本交差点B 直後
-車線: S S
-接続: （空欄）
-確度: 確
-出典: 見本</title><text class="pt" x="16" y="98">見本交差点B</text><rect x="16" y="106" width="34" height="16" rx="3" fill="#0f766e"/><text class="badge" x="33.0" y="118" text-anchor="middle">直後</text><text class="sub" x="56" y="118">確度:確　9行目</text></g></svg></div><div class="pane card" data-dir="北行き" data-view="csv"><svg class="lm" xmlns="http://www.w3.org/2000/svg" width="652" height="452" viewBox="0 0 652 452" data-direction="北行き" data-view="csv"><style>
-.lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
-.lm .ttl{font-size:17px;font-weight:700}
-.lm .cap{font-size:12px;fill:#52606d}
-.lm .pt{font-size:14px;font-weight:700}
-.lm .sub{font-size:11px;fill:#52606d}
-.lm .badge{font-size:11px;font-weight:700;fill:#fff}
-.lm .strip{fill:#e9ecef}
-.lm .stripedge{stroke:#adb5bd;stroke-width:1}
-.lm .stripname{font-size:12px;fill:#495057;font-weight:700}
-.lm .stripend{font-size:11px;fill:#495057}
-.lm .stop{stroke:#1f2933;stroke-width:3.5}
-.lm .ln,.lm .rb{stroke-width:1.5}
-.lm .ln.c-k,.lm .rb.c-k{fill:#2f5f98;stroke:#2f5f98}
-.lm .ln.c-s,.lm .rb.c-s{fill:#a8c0df;stroke:#87a6cf}
-.lm .ln.c-p,.lm .rb.c-p{fill:#e7eef8;stroke:#2f5f98;stroke-dasharray:5 3}
-.lm .ln.c-u,.lm .rb.c-u{fill:#f3f3f3;stroke:#9aa0a6;stroke-dasharray:1.5 3}
-.lm .ln.bad{stroke:#d92d20;stroke-width:2.5;stroke-dasharray:none}
-.lm .ex{fill:none;stroke-width:12}
-.lm .ex.c-k{stroke:#2f5f98}.lm .ex.c-s{stroke:#a8c0df}
-.lm .ex.c-p{stroke:#2f5f98;stroke-dasharray:7 5}.lm .ex.c-u{stroke:#9aa0a6;stroke-dasharray:2 4}
-.lm .ah.c-k,.lm .ah.c-p{fill:#2f5f98}.lm .ah.c-s{fill:#a8c0df}.lm .ah.c-u{fill:#9aa0a6}
-.lm .gl{font-size:20px;text-anchor:middle;dominant-baseline:central;fill:#17324d}
-.lm .gl.on-k{fill:#fff}.lm .gl.on-u{fill:#5f6368}
-.lm .gl.t2{font-size:15px}.lm .gl.t3{font-size:12px}.lm .gl.bus{font-size:12px;font-weight:700}
-.lm .exname{font-size:12px;font-weight:700;fill:#1f2933;paint-order:stroke;stroke:#fff;stroke-width:3px}
-.lm .ph{fill:#fafafa;stroke:#9aa0a6;stroke-width:1.2;stroke-dasharray:2 3}
-.lm .phtext{font-size:12px;fill:#7b8794;text-anchor:middle;dominant-baseline:central}
-.lm .stub{fill:none;stroke:#9aa0a6;stroke-width:3;stroke-dasharray:3 3}
-.lm .blank{fill:none;stroke:#c3c7cc;stroke-width:2;stroke-dasharray:2 5}
-.lm .q{font-size:13px;font-weight:700;fill:#b54708;text-anchor:middle}
-.lm .warn{font-size:12px;font-weight:700;fill:#b54708;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:4px}
-.lm .cut{font-size:18px;font-weight:700;fill:#d92d20;text-anchor:middle}
-.lm .flow{font-size:12px;fill:#52606d;text-anchor:middle}
-.lm .sel{stroke:#f08c00 !important;stroke-width:3.5 !important;stroke-dasharray:none !important}
-.lm text.sel{fill:#f08c00;stroke:none !important}
-</style><rect width="100%" height="100%" fill="#fff"/><g transform="matrix(1 0 0 -1 0 506)"><rect class="strip" x="210" y="305" width="434" height="30"/><line class="stripedge" x1="210" y1="305" x2="644" y2="305"/><line class="stripedge" x1="210" y1="335" x2="644" y2="335"/><path class="stub" d="M389,128 L389,146"/><path class="stub" d="M431,128 L431,146"/><path class="stub" d="M389,194 L389,212"/><path class="stub" d="M431,194 L431,212"/><path class="stub" d="M473,194 L473,212"/><path class="rb c-k" data-line="8" d="M412,262 C412,320 412,320 412,378 L450,378 C450,320 450,320 450,262 Z"><title>8行目 車線2 → 9行目 車線1（自動）</title></path><path class="rb c-k" data-line="8" d="M454,262 C454,320 454,320 454,378 L492,378 C492,320 492,320 492,262 Z"><title>8行目 車線3 → 9行目 車線2（自動）</title></path><path class="ex c-k" data-line="8" d="M389,262 C389,320 389,320 326,320"><title>8行目 車線1：見本通へ離脱（自動）</title></path><polygon class="ah c-k" points="326,311 312,320 326,329"/><rect class="ln c-k" data-line="7" x="370" y="78" width="38" height="50" rx="3"><title>車線1: S
-7行目 北行き 順1 見本区間 区間中
-車線: S S
-接続: （空欄）
-確度: 確
-出典: 見本</title></rect><rect class="ln c-k" data-line="7" x="412" y="78" width="38" height="50" rx="3"><title>車線2: S
-7行目 北行き 順1 見本区間 区間中
-車線: S S
-接続: （空欄）
-確度: 確
-出典: 見本</title></rect><rect class="ln c-k" data-line="8" x="370" y="212" width="38" height="50" rx="3"><title>車線1: L
-8行目 北行き 順2 見本交差点B 手前
-車線: L S S
-接続: （空欄）
-確度: 確
-出典: 見本
-交差道路: 見本通</title></rect><rect class="ln c-k" data-line="8" x="412" y="212" width="38" height="50" rx="3"><title>車線2: S
-8行目 北行き 順2 見本交差点B 手前
-車線: L S S
-接続: （空欄）
-確度: 確
-出典: 見本
-交差道路: 見本通</title></rect><rect class="ln c-k" data-line="8" x="454" y="212" width="38" height="50" rx="3"><title>車線3: S
-8行目 北行き 順2 見本交差点B 手前
-車線: L S S
-接続: （空欄）
-確度: 確
-出典: 見本
-交差道路: 見本通</title></rect><line class="stop" x1="367" y1="264" x2="495" y2="264"><title>停止線</title></line><rect class="ln c-k" data-line="9" x="412" y="378" width="38" height="50" rx="3"><title>車線1: S
-9行目 北行き 順3 見本交差点B 直後
-車線: S S
-接続: （空欄）
-確度: 確
-出典: 見本</title></rect><rect class="ln c-k" data-line="9" x="454" y="378" width="38" height="50" rx="3"><title>車線2: S
-9行目 北行き 順3 見本交差点B 直後
-車線: S S
-接続: （空欄）
-確度: 確
-出典: 見本</title></rect></g><text class="gl on-k t1" x="389" y="403">↑</text><text class="gl on-k t1" x="431" y="403">↑</text><text class="gl on-k t1" x="389" y="269">↰</text><text class="gl on-k t1" x="431" y="269">↑</text><text class="gl on-k t1" x="473" y="269">↑</text><text class="gl on-k t1" x="431" y="103">↑</text><text class="gl on-k t1" x="473" y="103">↑</text><text class="ttl" x="16" y="28">北行き：見本区間 → 見本交差点B</text><text class="cap" x="16" y="48">北が上。下から上へ進む（運転者の左＝画面の左。どちらの向きでも同じ図）　線の見た目は確度（凡例）</text><text class="flow" x="431" y="68">進行方向 ↑（下から上へ）</text><text class="stripname" x="24" y="190">┄ 見本通（見本交差点B）</text><text class="q" x="389" y="355">?</text><text class="q" x="431" y="355">?</text><text class="q" x="389" y="326">?</text><text class="q" x="431" y="326">?</text><text class="q" x="473" y="326">?</text><text class="warn" x="431" y="340">対応未定<title>7行目 北行き 順1 見本区間 区間中
+出典: 見本</title></rect></g><text class="gl on-k t1" x="389" y="403">↑</text><text class="gl on-k t1" x="431" y="403">↑</text><text class="gl on-k t1" x="389" y="269">↰</text><text class="gl on-k t1" x="431" y="269">↑</text><text class="gl on-k t1" x="473" y="269">↑</text><text class="gl on-k t1" x="431" y="103">↑</text><text class="gl on-k t1" x="473" y="103">↑</text><text class="ttl" x="16" y="28">北行き：見本区間 → 見本交差点B</text><text class="cap" x="16" y="48">進行方向が上（運転席から前を見た向き。左の車線が画面の左）　線の見た目は確度（凡例）</text><text class="flow" x="431" y="68">進行方向 ↑（下から上へ）</text><text class="stripname" x="24" y="190">┄ 見本通（見本交差点B）</text><text class="q" x="389" y="355">?</text><text class="q" x="431" y="355">?</text><text class="q" x="389" y="326">?</text><text class="q" x="431" y="326">?</text><text class="q" x="473" y="326">?</text><text class="warn" x="431" y="340">対応未定<title>7行目 北行き 順1 見本区間 区間中
 → 8行目へ
 車線: S S
 接続: （空欄）
@@ -489,16 +264,13 @@ main{padding:16px;display:grid;gap:16px}
 </main>
 <script>
 (function(){
-  var dir = document.body.dataset.dir, view = 'map';
+  var dir = document.body.dataset.dir;
   function apply(){
-    document.querySelectorAll('.pane').forEach(function(p){
-      p.hidden = !(p.dataset.dir === dir && p.dataset.view === view);});
+    document.querySelectorAll('.pane').forEach(function(p){ p.hidden = p.dataset.dir !== dir; });
     document.querySelectorAll('.lint').forEach(function(p){ p.hidden = p.dataset.dir !== dir; });
     document.querySelectorAll('[data-set-dir]').forEach(function(b){ b.classList.toggle('on', b.dataset.setDir === dir); });
-    document.querySelectorAll('[data-set-view]').forEach(function(b){ b.classList.toggle('on', b.dataset.setView === view); });
   }
   document.querySelectorAll('[data-set-dir]').forEach(function(b){ b.onclick = function(){ dir = b.dataset.setDir; apply(); }; });
-  document.querySelectorAll('[data-set-view]').forEach(function(b){ b.onclick = function(){ view = b.dataset.setView; apply(); }; });
   apply();
 })();
 </script>

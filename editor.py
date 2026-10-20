@@ -208,8 +208,7 @@ class Store:
                 if eid:
                     auto[eid] = {"text": render.links_to_text(t.links),
                                  "unresolved": [j + 1 for j in t.unresolved]}
-        svgs = {d: {v: render.render_svg(model.routes[d], v) for v in ("map", "csv")}
-                for d in render.DIRECTIONS}
+        svgs = {d: render.render_svg(model.routes[d]) for d in render.DIRECTIONS}
         c = model.counts()
         return {"issues": [i.to_dict() for i in model.issues], "lines": lines, "auto": auto,
                 "svgs": svgs, "counts": {k: c[k] for k in render.LEVELS}}

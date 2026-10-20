@@ -550,11 +550,7 @@ CONF_CLASS = {"確": "k", "資": "s", "推": "p", "": "u"}
 CONF_TEXT = {"確": "確", "資": "資", "推": "推", "": "不明"}
 GLYPH = {"L": "↰", "S": "↑", "R": "↱", "SL": "↰↑", "SR": "↑↱", "LSR": "↰↑↱"}
 KIND_COLOR = {"手前": "#c2410c", "直後": "#0f766e", "区間中": "#6b7280"}
-VIEW_CAPTION = {
-    "map": "上空から見た向き（北が上。運転者の左＝画面の右）",
-    "csv": "CSV の並び順（車線1＝画面の左。左右は鏡像）",
-    "up": "北が上。下から上へ進む（運転者の左＝画面の左。どちらの向きでも同じ図）",
-}
+CAPTION = "進行方向が上（運転席から前を見た向き。左の車線が画面の左）"
 
 SVG_STYLE = """<style>
 .lm text{font-family:"Yu Gothic UI","Meiryo","Hiragino Sans",sans-serif;fill:#1f2933}
@@ -701,11 +697,11 @@ def _row_tip(row: Row, extra: str = "") -> str:
     return "\n".join(parts)
 
 
-def render_svg(route: Route, view: str = "map") -> str:
-    """1方向分の車線接続図を SVG で返す。view は map（上空から見た向き）か csv（CSV の並び順）。
+def render_svg(route: Route) -> str:
+    """1方向分の車線接続図を SVG で返す。
 
-    北が上になるように、南行きは上から下へ、北行きは下から上へ進む図にする。
-    北行きは運転者の左が画面の左になるので、view によらず同じ図になる。
+    南行き・北行きとも進行方向を上にした、運転席から前を見た向きの図にする
+    （左の車線が画面の左、矢印は路面標示どおり上向き）。
     """
     rows, trans = route.rows, route.transitions
     if not rows:
@@ -714,30 +710,23 @@ def render_svg(route: Route, view: str = "map") -> str:
                 f'{_e(route.direction)}：行がありません</text></svg>')
     L = _layout(route)
     P, LW = G.pitch(), G.LW
-    up = route.direction == "北行き"
-    mirror = view == "map" and not up
-    # 北行きは図形を上下反転する。文字は反転させず、位置だけ Y() で読み替えて置く
+    # 配置は上から下へ並べて計算し、図形は最後に上下反転して下から上へ進む図にする。
+    # 文字は反転させず、位置だけ Y() で読み替えて置く
     K = G.TOP + L.height - G.BOTTOM
 
     def Y(y: float) -> float:
-        return K - y if up else y
-
-    def sx(x: float) -> float:
-        return 2 * L.cx - x if mirror else x
+        return K - y
 
     def span(k: int, j: int) -> tuple[float, float]:
         a = L.x0 + (L.offs[k] + j) * P
-        p, q = sx(a), sx(a + LW)
-        return (min(p, q), max(p, q))
+        return (a, a + LW)
 
     def row_span(k: int) -> tuple[float, float]:
         a, b = span(k, 0), span(k, L.counts[k] - 1)
         return (min(a[0], b[0]), max(a[1], b[1]))
 
     def out_dir(side: str) -> int:
-        # 進行方向に向かって左（L）は、上空から見た向きでは画面の右になる
-        left = side == "L"
-        return 1 if left == mirror else -1
+        return -1 if side == "L" else 1
 
     road_l, road_r = L.x0, L.x0 + L.road_w
     bg, fg, labels, glyphs = [], [], [], []
@@ -745,14 +734,13 @@ def render_svg(route: Route, view: str = "map") -> str:
     # ---- 見出し
     labels.append(f'<text class="ttl" x="16" y="28">{_e(route.direction)}：'
                   f'{_e(rows[0].point)} → {_e(rows[-1].point)}</text>')
-    caption = VIEW_CAPTION["up"] if up else VIEW_CAPTION[view]
-    labels.append(f'<text class="cap" x="16" y="48">{_e(caption)}　線の見た目は確度（凡例）</text>')
-    labels.append(f'<text class="flow" x="{_f(L.cx)}" y="{_f(G.TOP - 10)}">'
-                  f'{"進行方向 ↑（下から上へ）" if up else "進行方向 ↓"}</text>')
+    labels.append(f'<text class="cap" x="16" y="48">{_e(CAPTION)}　線の見た目は確度（凡例）</text>')
+    labels.append(f'<text class="flow" x="{_f(L.cx)}" y="{_f(G.TOP - 10)}">進行方向 ↑（下から上へ）</text>')
 
     # ---- 交差点（横の帯）
     # 画面の右が東か: 上空から見た向きの南行き（北が上）と、CSV の並び順の北行き
-    east_right = (route.direction == "南行き") == mirror
+    # 画面の右が東か: 進行方向が上なので、北行きなら右が東、南行きなら右が西
+    east_right = route.direction == "北行き"
     strip_names: dict[str, set[str]] = {}
     for k, (gy1, gy2, strips) in L.gaps.items():
         for i, p in enumerate(strips):
@@ -836,9 +824,9 @@ def render_svg(route: Route, view: str = "map") -> str:
                 if left_ok == right_ok:
                     tipx = (b1 + b2) / 2
                 elif left_ok:
-                    tipx = b2 if mirror else b1
+                    tipx = b1
                 else:
-                    tipx = b1 if mirror else b2
+                    tipx = b2
                 ys0 = y1 + gh * 0.6
                 d = _ribbon(tipx - 1, tipx + 1, ys0, b1, b2, y2)
                 fg.append(f'<path class="rb c-{CONF_CLASS[nxt.conf]}" data-line="{nxt.line}" d="{d}">'
@@ -936,15 +924,7 @@ def render_svg(route: Route, view: str = "map") -> str:
                     glyphs.append(f'<text class="gl on-{cls}" x="{_f(cx)}" y="{_f(cy)}">?</text>')
                 else:
                     g = GLYPH[code]
-                    # 矢印は運転席から見た記号（↰↑↱）。上へ進む図ではそのまま、
-                    # 下へ進む図では回す（上空から見た向き）か裏返す（CSV の並び順）
-                    if up:
-                        tf = ""
-                    elif mirror:
-                        tf = f' transform="rotate(180 {_f(cx)} {_f(cy)})"'
-                    else:
-                        tf = f' transform="translate(0 {_f(2 * cy)}) scale(1 -1)"'
-                    glyphs.append(f'<text class="gl on-{cls} t{len(g)}" x="{_f(cx)}" y="{_f(cy)}"{tf}>{g}</text>')
+                    glyphs.append(f'<text class="gl on-{cls} t{len(g)}" x="{_f(cx)}" y="{_f(cy)}">{g}</text>')
             if row.kind == "手前":
                 a, b = row_span(k)
                 fg.append(f'<line class="stop" x1="{_f(a - 3)}" y1="{_f(y + G.ROW_H + 2)}" '
@@ -965,9 +945,9 @@ def render_svg(route: Route, view: str = "map") -> str:
 
     return (f'<svg class="lm" xmlns="http://www.w3.org/2000/svg" width="{_f(L.width)}" '
             f'height="{_f(L.height)}" viewBox="0 0 {_f(L.width)} {_f(L.height)}" '
-            f'data-direction="{_e(route.direction)}" data-view="{view}">{SVG_STYLE}'
+            f'data-direction="{_e(route.direction)}">{SVG_STYLE}'
             f'<rect width="100%" height="100%" fill="#fff"/>'
-            + (f'<g transform="matrix(1 0 0 -1 0 {_f(K)})">' if up else "<g>")
+            + f'<g transform="matrix(1 0 0 -1 0 {_f(K)})">'
             + "".join(bg) + "".join(fg) + "</g>" + "".join(glyphs) + "".join(labels) + "</svg>")
 
 
@@ -1024,16 +1004,13 @@ main{padding:16px;display:grid;gap:16px}
 
 PAGE_SCRIPT = """
 (function(){
-  var dir = document.body.dataset.dir, view = 'map';
+  var dir = document.body.dataset.dir;
   function apply(){
-    document.querySelectorAll('.pane').forEach(function(p){
-      p.hidden = !(p.dataset.dir === dir && p.dataset.view === view);});
+    document.querySelectorAll('.pane').forEach(function(p){ p.hidden = p.dataset.dir !== dir; });
     document.querySelectorAll('.lint').forEach(function(p){ p.hidden = p.dataset.dir !== dir; });
     document.querySelectorAll('[data-set-dir]').forEach(function(b){ b.classList.toggle('on', b.dataset.setDir === dir); });
-    document.querySelectorAll('[data-set-view]').forEach(function(b){ b.classList.toggle('on', b.dataset.setView === view); });
   }
   document.querySelectorAll('[data-set-dir]').forEach(function(b){ b.onclick = function(){ dir = b.dataset.setDir; apply(); }; });
-  document.querySelectorAll('[data-set-view]').forEach(function(b){ b.onclick = function(){ view = b.dataset.setView; apply(); }; });
   apply();
 })();
 """
@@ -1045,9 +1022,7 @@ def render_html(model: Model, title: str = "車線接続図") -> str:
     panes, lints = [], []
     for d in DIRECTIONS:
         route = model.routes[d]
-        for view in ("map", "csv"):
-            panes.append(f'<div class="pane card" data-dir="{d}" data-view="{view}">'
-                         f'{render_svg(route, view)}</div>')
+        panes.append(f'<div class="pane card" data-dir="{d}">{render_svg(route)}</div>')
         items = [i for i in model.issues if i.direction in (d, "")]
         lis = "".join(f'<li class="lv-{i.level}">{_e(i.format())}</li>' for i in items) or "<li>問題はありません</li>"
         lints.append(f'<section class="lint card" data-dir="{d}"><h2>検証結果（{d}）</h2><ul>{lis}</ul></section>')
@@ -1060,12 +1035,11 @@ def render_html(model: Model, title: str = "車線接続図") -> str:
 <body data-dir="{first}">
 <header><h1>{_e(title)}</h1>
 <span class="seg">{dir_buttons}</span>
-<span><span class="lbl">向き</span><span class="seg"><button data-set-view="map">上空から見た向き</button><button data-set-view="csv">CSV の並び順</button></span></span>
 <span class="count">エラー {c['エラー']} / 警告 {c['警告']} / 情報 {c['情報']}</span>
 </header>
 <main>
 <section class="card"><h2>凡例</h2>{render_legend()}
-<p class="note">北が上になるように、南行きは上から下へ、北行きは下から上へ進む図です。矢印は路面標示（↰ ↑ ↱）を図の進む向きに合わせて回しています。空欄のデータは推測で埋めず「未入力」「対応未定」と描きます。</p></section>
+<p class="note">南行き・北行きとも進行方向が上（下から上へ進む）、運転席から前を見た向きの図です。矢印は路面標示（↰ ↑ ↱）のとおりです。空欄のデータは推測で埋めず「未入力」「対応未定」と描きます。</p></section>
 {''.join(panes)}
 {''.join(lints)}
 </main>

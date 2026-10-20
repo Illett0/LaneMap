@@ -132,19 +132,28 @@ class CrossStreetTest(unittest.TestCase):
         self.assertIn("鞍馬口通（西）", svg)
 
 
-class DirectionFlipTest(unittest.TestCase):
-    BODY = "{d},1,X,手前,L S,,,確,\n{d},2,X,直後,S,,,確,\n"
+class DirectionTest(unittest.TestCase):
+    """どちらの方向も進行方向が上（下から上へ進む）。"""
+    BODY = "{d},1,X,手前,L S R,,,確,,東:甲通 西:乙通\n{d},2,X,直後,S,,,確,,\n"
 
-    def test_northbound_flows_up(self):
-        svg = render.render_svg(model_of(self.BODY.format(d="北行き")).routes["北行き"])
-        self.assertIn('transform="matrix(1 0 0 -1 0', svg)
-        self.assertIn("進行方向 ↑", svg)
-        self.assertNotIn("rotate(180", svg)          # 矢印は上向きのまま
+    def svg(self, d):
+        head = HEAD.strip() + ",交差道路\n"
+        return render.render_svg(model_of(self.BODY.format(d=d), head).routes[d])
 
-    def test_southbound_flows_down(self):
-        svg = render.render_svg(model_of(self.BODY.format(d="南行き")).routes["南行き"])
-        self.assertNotIn("matrix(1 0 0 -1", svg)
-        self.assertIn("進行方向 ↓", svg)
+    def test_both_directions_flow_up(self):
+        for d in ("南行き", "北行き"):
+            svg = self.svg(d)
+            self.assertIn('transform="matrix(1 0 0 -1 0', svg)
+            self.assertIn("進行方向 ↑", svg)
+            self.assertNotIn("rotate(180", svg)      # 矢印は路面標示どおり上向き
+
+    def test_east_west_labels_follow_direction(self):
+        # 南行きは左が東、北行きは左が西。帯の左端に出る名前で確かめる
+        for d, left in (("南行き", "甲通（東）"), ("北行き", "乙通（西）")):
+            svg = self.svg(d)
+            pos = {nm: svg.index(nm) for nm in ("甲通（東）", "乙通（西）")}
+            frag = svg[pos[left] - 120:pos[left]]
+            self.assertIn('text-anchor="start"', frag, d)
 
 
 class LintTest(unittest.TestCase):
