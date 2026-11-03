@@ -244,6 +244,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
         <button class="btn s" id="aIn" title="拡大">＋</button>
         <button class="btn s" id="aTurn"></button>
         <button class="btn s" id="aHome" title="地点の座標に戻します">中央に戻す</button>
+        <a class="btn s" id="aMapillary" target="_blank" rel="noopener" title="今の写真の中心を、Mapillary の地図で別タブに開きます。写真から入れた車線は確度を「資」にし、出典に撮影者と撮影日を書きます">Mapillary で開く</a>
         <span class="small muted">ドラッグで移動、ホイールで拡大縮小</span>
       </span>
     </div>
@@ -273,7 +274,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
     <li><b>③ 出典・確度</b>：どこで確かめたか。確度は 確（現地・自分で撮った写真）／資（資料）／推（推定）。</li>
     <li><b>保存</b>（<kbd>Ctrl</kbd>+<kbd>S</kbd>）：元のファイルは history/backups/ に残り、変更点は history/changes.csv に記録されます。</li>
   </ol>
-  <p class="small muted">右上の「航空写真」で、選んだ行の地点の写真（地理院タイル）を見られます。写真は撮影時期が古いことがあるので、今の車線と違う場合があります。</p>
+  <p class="small muted">右上の「航空写真」で、選んだ行の地点の写真（地理院タイル）を見られます。写真は撮影時期が古いことがあるので、今の車線と違う場合があります。路面の矢印は「Mapillary で開く」で路上の写真を探せます。そこから入れた車線は確度を 資 にし、出典に撮影者と撮影日を書きます。</p>
   <p class="small muted">分からない所は空欄のままで大丈夫です。図では「未入力」「対応未定」と表示され、推測では埋めません。<br>
   キー操作：<kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> 行の移動、<kbd>Ctrl</kbd>+<kbd>Z</kbd> 元に戻す</p>
   <p style="text-align:right;margin:12px 0 0"><button class="btn primary" id="helpClose">はじめる</button></p>
@@ -763,6 +764,9 @@ function drawAerial(){
   $('#aTurn').disabled = st.dir !== '南行き';
   $('#aHome').disabled = !c;
   $('#aIn').disabled = aer.z >= AER.maxZ; $('#aOut').disabled = aer.z <= AER.minZ;
+  const ml = $('#aMapillary');
+  ml.style.display = aer.lat === null ? 'none' : '';
+  if (aer.lat !== null) ml.href = `https://www.mapillary.com/app/?lat=${aer.lat.toFixed(6)}&lng=${aer.lon.toFixed(6)}&z=18`;
   $('#aNorth').textContent = aerRotated() ? '↓ 北（進行方向が上）' : (st.dir === '北行き' ? '↑ 北（進行方向が上）' : '↑ 北');
   $('#aNote').textContent = aer.lat === null
     ? (aer.point ? `「${aer.point}」の座標がありません（CSV と同じ名前の .coords.json に追加すると表示できます）` : '行を選ぶと、その地点の写真を表示します') : '';
@@ -784,9 +788,9 @@ function drawAerial(){
         img.src = AER.url(tz, x, y);
         aer.tiles.set(key, img); layer.insertBefore(img, mark);
       }
-      img.style.width = img.style.height = size + 'px';
-      img.style.left = ((x * 256 - cx) * scale + w / 2) + 'px';
-      img.style.top = ((y * 256 - cy) * scale + h / 2) + 'px';
+      img.style.width = img.style.height = (size + 1) + 'px';   // 継ぎ目に線が出ないよう 1px 重ねる
+      img.style.left = Math.round((x * 256 - cx) * scale + w / 2) + 'px';
+      img.style.top = Math.round((y * 256 - cy) * scale + h / 2) + 'px';
     }
     mark.hidden = !c;
     if (c) {
