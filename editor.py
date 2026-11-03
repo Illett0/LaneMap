@@ -24,10 +24,12 @@ import os
 import re
 import sys
 import threading
+import urllib.error
+import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import render
 
@@ -36,6 +38,11 @@ PID_FILE = ROOT / "editor.pid"
 EDITOR_HTML = ROOT / "editor" / "index.html"
 MAX_BODY = 5 * 1024 * 1024
 CHANGE_COLUMNS = ["日時", "ファイル", "操作", "方向", "順", "地点", "種別", "項目", "変更前", "変更後"]
+ENV_FILE = ROOT / ".env"
+MAPILLARY_IMAGES = "https://graph.mapillary.com/images"
+MAPILLARY_FIELDS = ("id,captured_at,compass_angle,computed_compass_angle,is_pano,creator,quality_score,"
+                    "geometry,computed_geometry,thumb_256_url,on_foot,sequence")
+MAPILLARY_BOX = (0.0006, 0.0009)   # 探す範囲（経度、緯度の片側）。東西に約 55m、南北に約 100m
 
 
 # ---------------------------------------------------------------- PID ファイル
@@ -304,6 +311,59 @@ def append_changes(history: Path, now: dt.datetime, filename: str, changes: list
                         e.get("種別", ""), col, before, after])
 
 
+# ---------------------------------------------------------------- Mapillary
+
+class MapillaryError(Exception):
+    """利用者に見せてよい文（トークンを含めない）を持つエラー。"""
+
+
+def load_env_value(name: str, path: Path = ENV_FILE) -> str:
+    """.env から1つの値を読む。なければ空文字。"""
+    try:
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return ""
+    for line in lines:
+        key, sep, value = line.partition("=")
+        if sep and key.strip() == name:
+            return value.strip().strip("\"'")
+    return ""
+
+
+def _mapillary_fetch(params: dict, token: str) -> list[dict]:
+    req = urllib.request.Request(f"{MAPILLARY_IMAGES}?{urlencode(params)}",
+                                 headers={"Authorization": f"OAuth {token}", "User-Agent": "LaneMapEditor"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as res:
+            return json.load(res).get("data", [])
+    except urllib.error.HTTPError as e:
+        raise MapillaryError(f"Mapillary が要求を受け付けませんでした（HTTP {e.code}）") from None
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        raise MapillaryError("Mapillary に接続できませんでした") from None
+
+
+def mapillary_images(lat: float, lon: float, token: str, fetch=_mapillary_fetch) -> list[dict]:
+    """地点の付近の写真を探し、画面で使う項目だけにして返す。地点を選んだときだけ呼び、結果は保存しない。
+
+    半径検索は 1 回に 50 枚ほどしか返さず、期間の指定も無視するので使わない（2026-11-04 に確認。
+    堀川北大路では半径検索が 102 枚、範囲検索が 855 枚で、古い写真と他の撮影者の写真が漏れていた）。
+    """
+    dlon, dlat = MAPILLARY_BOX
+    box = f"{lon - dlon:.6f},{lat - dlat:.6f},{lon + dlon:.6f},{lat + dlat:.6f}"
+    out = []
+    for image in fetch({"fields": MAPILLARY_FIELDS, "bbox": box, "limit": 2000}, token):
+        point = (image.get("computed_geometry") or image.get("geometry") or {}).get("coordinates")
+        if not point or not image.get("captured_at"):
+            continue
+        heading = image.get("computed_compass_angle")
+        out.append({"id": str(image["id"]), "at": image["captured_at"], "lat": point[1], "lon": point[0],
+                    "heading": image.get("compass_angle") if heading is None else heading,
+                    "pano": bool(image.get("is_pano")), "by": (image.get("creator") or {}).get("username", ""),
+                    "quality": image.get("quality_score"), "thumb": image.get("thumb_256_url", ""),
+                    "foot": bool(image.get("on_foot")), "seq": image.get("sequence", "")})
+    return out
+
+
 # ---------------------------------------------------------------- HTTP
 
 class Handler(BaseHTTPRequestHandler):
@@ -334,9 +394,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self._host_ok():
             return
-        path = urlparse(self.path).path
+        url = urlparse(self.path)
+        path = url.path
         st = self.store
-        if path in ("/", "/index.html"):
+        if path == "/api/mapillary/config":
+            self._json(200, {"token": load_env_value("MAPILLARY_TOKEN")})
+        elif path == "/api/mapillary/images":
+            self._mapillary_images(parse_qs(url.query))
+        elif path in ("/", "/index.html"):
             self._send(200, EDITOR_HTML.read_bytes(), "text/html; charset=utf-8")
         elif path == "/api/data":
             with st.lock:
@@ -351,6 +416,21 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, body.encode("utf-8"), "text/html; charset=utf-8")
         else:
             self._send(404, b"not found", "text/plain")
+
+    def _mapillary_images(self, query: dict) -> None:
+        token = load_env_value("MAPILLARY_TOKEN")
+        if not token:
+            return self._json(400, {"error": ".env に MAPILLARY_TOKEN がありません"})
+        try:
+            lat, lon = float(query["lat"][0]), float(query["lon"][0])
+            if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                raise ValueError
+        except (KeyError, ValueError):
+            return self._json(400, {"error": "地点の指定が正しくありません"})
+        try:
+            self._json(200, {"images": mapillary_images(lat, lon, token)})
+        except MapillaryError as e:
+            self._json(502, {"error": str(e)})
 
     def do_POST(self):
         if not self._host_ok():

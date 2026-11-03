@@ -154,6 +154,31 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
 .ptgroup{display:contents}
 .ptgroup[hidden]{display:none}
 .ml-btns{display:inline-flex;gap:4px}
+.photo{display:flex;flex:1;min-height:0;background:#222}
+.photo[hidden]{display:none}
+.m-side{width:270px;flex:none;display:flex;flex-direction:column;min-height:0;background:var(--card);border-right:1px solid var(--line)}
+.m-map{position:relative;height:220px;flex:none;overflow:hidden;background:#e8e8e8;cursor:grab;touch-action:none;user-select:none;border-bottom:1px solid var(--line)}
+.m-map[hidden]{display:none}
+.m-map.drag{cursor:grabbing}
+.m-map .a-tag{font-size:10px;padding:1px 4px}
+.m-map .a-north{top:4px;left:4px}
+.m-attr{right:2px;bottom:2px;cursor:auto}
+#mDots{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
+.m-dot{fill:#05cb63;stroke:#fff;stroke-width:1.5;cursor:pointer}
+.m-dot:hover{fill:#f08c00}
+.m-dot.on{fill:#f08c00;stroke:#7a4500;stroke-width:2}
+#mWedge{fill:rgba(240,140,0,.45);stroke:#b86800;stroke-width:1;pointer-events:none}
+#mCross{stroke:#e01b1b;stroke-width:2;pointer-events:none}
+.m-list{flex:1;min-height:0;overflow:auto;padding:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px;align-content:start}
+.m-item{display:block;width:100%;min-width:0;padding:3px;border:2px solid transparent;border-radius:6px;background:none;text-align:left;cursor:pointer;font-size:11px;line-height:1.3}
+.m-item:hover{background:#eef2f6}
+.m-item.on{border-color:var(--sel)}
+.m-item img{display:block;width:100%;height:84px;object-fit:cover;border-radius:4px;background:#ccd}
+.m-item span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m-view{position:relative;flex:1;min-width:0}
+#mViewer{position:absolute;inset:0}
+.m-note{position:absolute;z-index:5;top:12px;left:50%;transform:translateX(-50%);max-width:86%;background:rgba(255,255,255,.92);border-radius:6px;padding:6px 10px;font-size:13px}
+.m-note:empty{display:none}
 .aerial{position:relative;flex:1;min-height:0;overflow:hidden;background:#333;cursor:grab;touch-action:none;user-select:none}
 .aerial[hidden]{display:none}
 .aerial.drag{cursor:grabbing}
@@ -192,7 +217,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
   .list{max-height:42vh}
   .form{overflow:visible}
   .preview{max-height:85vh}
-  .aerial{height:70vh;flex:none}
+  .aerial,.photo{height:70vh;flex:none}
 }
 </style>
 </head>
@@ -233,7 +258,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
   <section class="col"><div class="form" id="form"></div></section>
   <section class="col">
     <div class="ptools">
-      <span class="seg" id="pane"><button data-p="diagram">図</button><button data-p="aerial">航空写真</button></span>
+      <span class="seg" id="pane"><button data-p="diagram">図</button><button data-p="aerial">航空写真</button><button data-p="photo">路上写真</button></span>
       <span class="ptgroup" id="ptDiagram">
         <span class="small muted">進行方向が上（下から上へ進む）</span>
         <span class="small muted">大きさ</span>
@@ -252,6 +277,12 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
         <span class="small muted">ドラッグで移動、ホイールで拡大縮小</span>
         <span class="small" id="aGuide"></span>
       </span>
+      <span class="ptgroup" id="ptPhoto" hidden>
+        <span class="seg" id="mSince"><button data-s="2024-01-01">2024年以降</button><button data-s="">全期間</button></span>
+        <label class="small"><input type="checkbox" id="mMatch" checked> この行の位置と向きだけ</label>
+        <span class="small muted" id="mCount"></span>
+        <button class="btn s" id="mUse" disabled title="表示中の写真の撮影者と撮影日を出典に入れ、確度を「資」にします">この写真を出典に入れる</button>
+      </span>
     </div>
     <div class="preview fit" id="preview"></div>
     <div class="aerial" id="aerial" hidden>
@@ -259,6 +290,17 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
       <div class="a-tag a-north" id="aNorth"></div>
       <div class="a-tag a-note" id="aNote"></div>
       <div class="a-tag a-attr">出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>（全国最新写真）</div>
+    </div>
+    <div class="photo" id="photo" hidden>
+      <div class="m-side">
+        <div class="m-map" id="mMap" hidden>
+          <div class="a-layer" id="mLayer"><svg id="mDots"></svg></div>
+          <div class="a-tag a-north">↑ 北</div>
+          <div class="a-tag m-attr"><a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>（標準地図）／写真の位置 <a href="https://www.mapillary.com/" target="_blank" rel="noopener">Mapillary</a></div>
+        </div>
+        <div class="m-list" id="mList"></div>
+      </div>
+      <div class="m-view"><div id="mViewer"></div><div class="m-note" id="mNote"></div></div>
     </div>
     <details class="lint" id="lintbox" open><summary id="lintsum">検証結果</summary><ul id="lint"></ul></details>
   </section>
@@ -279,7 +321,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
     <li><b>③ 出典・確度</b>：どこで確かめたか。確度は 確（現地・自分で撮った写真）／資（資料）／推（推定）。</li>
     <li><b>保存</b>（<kbd>Ctrl</kbd>+<kbd>S</kbd>）：元のファイルは history/backups/ に残り、変更点は history/changes.csv に記録されます。</li>
   </ol>
-  <p class="small muted">右上の「航空写真」で、選んだ行の地点の写真（地理院タイル）を見られます。写真は撮影時期が古いことがあるので、今の車線と違う場合があります。路面の矢印は「Mapillary（2024年以降）」で路上の写真を探せます（写真がなければ「全期間」）。探す写真の向きは、ボタンの近くに出ます。そこから入れた車線は確度を 資 にし、出典に撮影者と撮影日を書きます（③の「Mapillary の写真から入れる」でひな形が入ります）。</p>
+  <p class="small muted">右上の「航空写真」で、選んだ行の地点の写真（地理院タイル）を見られます。写真は撮影時期が古いことがあるので、今の車線と違う場合があります。「路上写真」では、選んだ行の位置と向きに合う Mapillary の写真が並びます（.env の MAPILLARY_TOKEN が必要）。「この写真を出典に入れる」で、撮影者と撮影日が出典に入ります。航空写真の「Mapillary（2024年以降）」からは、別タブでも探せます（写真がなければ「全期間」）。探す写真の向きは、ボタンの近くに出ます。そこから入れた車線は確度を 資 にし、出典に撮影者と撮影日を書きます（③の「Mapillary の写真から入れる」でひな形が入ります）。</p>
   <p class="small muted">分からない所は空欄のままで大丈夫です。図では「未入力」「対応未定」と表示され、推測では埋めません。<br>
   キー操作：<kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> 行の移動、<kbd>Ctrl</kbd>+<kbd>Z</kbd> 元に戻す</p>
   <p style="text-align:right;margin:12px 0 0"><button class="btn primary" id="helpClose">はじめる</button></p>
@@ -405,7 +447,7 @@ function banner(msg, kind = 'warn', actions = []){
 }
 
 // ---------------------------------------------------------------- 表示
-function renderAll(){ renderHeader(); renderDirs(); renderList(); renderForm(); renderPreview(); renderLint(); renderAerial(); }
+function renderAll(){ renderHeader(); renderDirs(); renderList(); renderForm(); renderPreview(); renderLint(); renderAerial(); renderPhoto(); }
 
 function renderHeader(){
   const s = $('#savestate');
@@ -455,7 +497,7 @@ function select(id){
   const e = byId(id); if (!e) return;
   if (dirOf(e) !== st.dir) { st.dir = dirOf(e); renderDirs(); }
   st.sel = id; st.lane = st.src = null;
-  renderList(); renderForm(); renderPreview(); renderHeader(); renderAerial();
+  renderList(); renderForm(); renderPreview(); renderHeader(); renderAerial(); renderPhoto();
 }
 function move(d){
   const e = byId(st.sel); if (!e) return;
@@ -758,6 +800,201 @@ function mapillaryGuide(e){
   return `探す写真：${e['方向']}${e['種別'] ? '・' + e['種別'] : ''} → ${where}${where ? '、' : ''}${to}へ向かう写真`;
 }
 function renderMapillaryGuide(){ $('#aGuide').textContent = aer.lat === null ? '' : mapillaryGuide(byId(st.sel)); }
+
+// ---- 路上写真（Mapillary）。検索は行を選んだときだけで、写真も検索結果もファイルには保存しない
+const MLY_JS = {base:'https://unpkg.com/mapillary-js@4.1.2/dist',
+  js:'sha384-1AlAxcgdzKreJ5f2K+t7SW3pEE0ek9u3lUwlZXX+v+FtEk1tWSg6DBVLb3ZKhpB+',
+  css:'sha384-IamMZxz60pSNzUk3cW2nl3uYUdpiDoQpLJrBoAAezEE+QaOYCVA9rfi/8Cx0x15T'};
+const mly = {token:null, lib:null, viewer:null, since:ML_FROM, match:true, cache:new Map(), rowKey:null, current:null, facing:null, pending:null, req:0,
+  shown:[], center:null, bearing:null, map:{lat:null, lon:null, z:17, tiles:new Map(), toPx:null}};   // z17 なら、探す範囲（南北に約 100m）が地図に収まる
+const GSI_STD = {tileMaxZ:18, url:(z, x, y) => `https://cyberjapandata.gsi.go.jp/xyz/std/${z}/${x}/${y}.png`};
+// 候補の写真の位置と、表示中の写真の向きを示す地図（北が上。文字が逆さにならないよう回さない）
+function mlyDrawMap(){
+  const box = $('#mMap'), m = mly.map;
+  if (st.pane !== 'photo' || box.hidden || m.lat === null) return;
+  const svg = $('#mDots');
+  m.toPx = placeTiles(box, $('#mLayer'), svg, m.tiles, GSI_STD, m.lat, m.lon, m.z);
+  const dots = mly.shown.map(i => {
+    const [x, y] = m.toPx(i.lat, i.lon);
+    return `<circle class="m-dot${i.id === mly.current?.id ? ' on' : ''}" data-id="${esc(i.id)}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${i.id === mly.current?.id ? 6 : 4.5}"/>`;
+  }).join('');
+  let cross = '';
+  if (mly.center) {
+    const [x, y] = m.toPx(mly.center.lat, mly.center.lon);
+    cross = `<path id="mCross" d="M${x - 8} ${y}H${x + 8}M${x} ${y - 8}V${y + 8}"/>`;
+  }
+  svg.innerHTML = `<path id="mWedge"/>${dots}${cross}`;
+  mlyDrawWedge();
+}
+function mlyDrawWedge(){
+  const wedge = $('#mWedge'), cur = mly.current, m = mly.map;
+  if (!wedge) return;
+  if (!cur || cur.lat == null || mly.bearing === null || !m.toPx) { wedge.removeAttribute('d'); return; }
+  const [x, y] = m.toPx(cur.lat, cur.lon), r = 28, at = d => {
+    const a = (mly.bearing + d) * Math.PI / 180;
+    return `${(x + r * Math.sin(a)).toFixed(1)} ${(y - r * Math.cos(a)).toFixed(1)}`;
+  };
+  wedge.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}L${at(-30)}A${r} ${r} 0 0 1 ${at(30)}Z`);
+}
+// 表示中の写真が地図の外に出たら、その写真へ地図を寄せる
+function mlyKeepInMap(){
+  const box = $('#mMap'), m = mly.map, cur = mly.current;
+  if (!cur || cur.lat == null || !m.toPx || box.hidden) return;
+  const [x, y] = m.toPx(cur.lat, cur.lon);
+  if (x < 10 || y < 10 || x > box.clientWidth - 10 || y > box.clientHeight - 10) { m.lat = cur.lat; m.lon = cur.lon; }
+}
+function mlyLib(){
+  if (mly.lib) return mly.lib;
+  mly.lib = new Promise((ok, ng) => {
+    const css = document.createElement('link');
+    Object.assign(css, {rel:'stylesheet', href:`${MLY_JS.base}/mapillary.css`, integrity:MLY_JS.css, crossOrigin:'anonymous'});
+    const js = document.createElement('script');
+    Object.assign(js, {src:`${MLY_JS.base}/mapillary.js`, integrity:MLY_JS.js, crossOrigin:'anonymous'});
+    js.onload = () => ok(window.mapillary);
+    js.onerror = () => { mly.lib = null; ng(new Error('写真の表示部品を読み込めませんでした（インターネット接続を確かめてください）')); };
+    document.head.append(css, js);
+  });
+  return mly.lib;
+}
+const mlyTarget = e => ({'南行き':180, '北行き':0})[e?.['方向']] ?? null;
+// この行の位置（手前なら進行方向の後ろ側、直後なら前側）と向きに合う写真か。360度写真は向きを回せるので位置だけ見る
+// 徒歩で撮った写真は歩道からのものが多く、車線を読みにくいので除く
+function mlyFits(image, e, c){
+  if (image.foot) return false;
+  const target = mlyTarget(e);
+  if (target === null) return true;
+  // 南北の道なので、東西に離れた写真は脇道のもの（向きが近くても別の道を写している）
+  if (Math.abs(image.lon - c.lon) * 111000 * Math.cos(c.lat * Math.PI / 180) > 20) return false;
+  const ahead = (image.lat - c.lat) * (target === 0 ? 1 : -1);
+  if (e['種別'] === '手前' && ahead >= 0) return false;
+  if (e['種別'] === '直後' && ahead <= 0) return false;
+  return image.pano || Math.abs((image.heading - target + 540) % 360 - 180) <= 45;
+}
+function mlyPick(images, e, c){
+  const from = mly.since ? Date.parse(mly.since) : 0;
+  const shown = images.filter(i => i.at >= from && (!mly.match || mlyFits(i, e, c)));
+  // 交差点から 60m より遠い写真は停止線付近の車線を読みにくいので、品質スコアから距離の分を引いて後ろへ回す。
+  // 品質スコアは空のことがあるので、同点なら新しい順
+  const score = i => (i.quality ?? 0) - Math.max(0, Math.abs(i.lat - c.lat) * 111000 - 60) / 100;
+  shown.sort((a, b) => score(b) - score(a) || b.at - a.at);
+  // 同じ連続撮影ばかりにならないよう、連続撮影ごとに順番に 1 枚ずつ選ぶ
+  const groups = new Map();
+  for (const i of shown) (groups.get(i.seq) || groups.set(i.seq, []).get(i.seq)).push(i);
+  const picked = [], lists = [...groups.values()];
+  for (let round = 0; picked.length < 40 && picked.length < shown.length; round++)
+    for (const g of lists) if (round < g.length && picked.length < 40) picked.push(g[round]);
+  return picked;
+}
+const mlyDate = at => new Date(at).toLocaleDateString('ja-JP', {year:'numeric', month:'long', day:'numeric'});
+function mlyShowCurrent(){
+  $('#mUse').disabled = !mly.current;
+  $('#mList').querySelectorAll('.m-item').forEach(b => {
+    const on = b.dataset.id === mly.current?.id;
+    b.classList.toggle('on', on);
+    if (on) {   // 一覧の中だけを動かす（scrollIntoView だと、画面の幅が狭いときにページごと動く）
+      const list = $('#mList'), r = b.getBoundingClientRect(), c = list.getBoundingClientRect();
+      if (r.top < c.top) list.scrollTop += r.top - c.top;
+      else if (r.bottom > c.bottom) list.scrollTop += r.bottom - c.bottom;
+    }
+  });
+  mlyKeepInMap();
+  mlyDrawMap();
+}
+async function mlyOpen(image){
+  // 一覧の情報をすぐ使う。写真を送ったときは、下の image の通知で表示中の写真に合わせる
+  const id = image.id;
+  mly.current = {id, at:image.at, by:image.by, lat:image.lat, lon:image.lon};
+  mly.bearing = image.pano && mly.facing !== null ? mly.facing : image.heading;
+  mlyShowCurrent();
+  const lib = await mlyLib();
+  if (!mly.viewer) {
+    mly.faceFirst = true;
+    mly.viewer = new lib.Viewer({accessToken:mly.token, container:'mViewer', imageId:id,
+      component:{cover:false, sequence:{visible:true}}});
+    // 読み込み中は移動できないので、選ばれた写真を覚えておいて、移動できるようになったら開く
+    mly.viewer.on('navigable', ev => {
+      if (!ev.navigable || !mly.pending) return;
+      const next = mly.pending; mly.pending = null;
+      mlyGo(next);
+    });
+    mly.viewer.on('bearing', ev => { mly.bearing = ev.bearing; mlyDrawWedge(); });
+    mly.viewer.on('image', ev => {
+      const im = ev.image;
+      const place = im.computedLngLat ?? im.lngLat;
+      mly.current = {id:String(im.id), at:im.capturedAt, by:im.creatorUsername, lat:place?.lat, lon:place?.lng};
+      // 360度写真の視線は撮影方向と別なので、撮影方向で上書きしない（視線は bearing の通知と mlyFace が決める）
+      if (im.cameraType !== 'spherical') mly.bearing = im.computedCompassAngle ?? im.compassAngle ?? null;
+      mlyShowCurrent();
+      if (mly.faceFirst) { mly.faceFirst = false; mlyFace(im); }
+    });
+    return;
+  }
+  mly.viewer.resize();
+  if (!mly.viewer.isNavigable) { mly.pending = id; return; }
+  await mlyGo(id);
+}
+// 一覧や地図から選んだ 360 度写真は、この行の進行方向を向けて開く。
+// 移動の途中は前の写真の視線を引き継ぐので、移動が終わってから向ける。矢印で送るときは、利用者が回した向きを保つ
+function mlyFace(im){
+  if (mly.facing === null || im.cameraType !== 'spherical') return;
+  mly.viewer.setCenter([(0.5 + (mly.facing - (im.computedCompassAngle ?? im.compassAngle ?? 0)) / 360 + 1) % 1, 0.5]);
+  mly.bearing = mly.facing;   // 地図の扇形も合わせる（bearing の通知は遅れることがある）
+  mlyDrawWedge();
+}
+async function mlyGo(id){
+  // 別の写真を選び直すと、前の移動は中断されてエラーになる。これは利用者に見せなくてよい
+  const im = await mly.viewer.moveTo(id).catch(err => { console.warn('写真を開けませんでした', err); return null; });
+  if (im && mly.current?.id === String(im.id)) mlyFace(im);
+}
+async function renderPhoto(force = false){
+  if (st.pane !== 'photo') return;
+  const e = byId(st.sel), point = e?.['地点'] || '', c = st.coords[point];
+  const key = [point, e?.['方向'], e?.['種別'], mly.since, mly.match].join('|');
+  $('#mSince').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === mly.since));
+  if (key === mly.rowKey && !force) { mly.viewer?.resize(); mlyDrawMap(); return; }
+  mly.rowKey = key;
+  mly.shown = []; mly.center = c || null;
+  $('#mMap').hidden = !c;
+  if (c && (mly.map.point !== point || mly.map.lat === null)) mly.map.z = 17;   // 別の地点では、交差点と候補全体が見える縮尺に戻す
+  if (c) { mly.map.lat = c.lat; mly.map.lon = c.lon; mly.map.point = point; }
+  const req = ++mly.req, note = $('#mNote'), list = $('#mList');
+  const done = (msg, count = '') => { note.textContent = msg; $('#mCount').textContent = count; };
+  list.innerHTML = '';
+  // 別の地点の写真を見ながら入力しないよう、次の写真を開くまでは隠す
+  mly.current = null; mly.pending = null;
+  $('#mViewer').style.visibility = 'hidden';
+  mlyShowCurrent();
+  if (!c) return done(point ? `「${point}」の座標がありません（CSV と同じ名前の .coords.json に追加すると探せます）` : '行を選ぶと、その地点の写真を探します');
+  if (!mly.token) {
+    const res = await api('/api/mapillary/config');
+    if (req !== mly.req) return;
+    mly.rowKey = null;   // 直してから同じ行でもう一度試せるように
+    if (res.status !== 200) return done('エディタが古いままです。.\\stop-editor.ps1 のあと .\\start-editor.ps1 で起動し直してください');
+    mly.token = res.data?.token || null;
+    if (!mly.token) return done('.env に MAPILLARY_TOKEN がないので使えません。航空写真の「Mapillary」のボタンからは別タブで探せます');
+    mly.rowKey = key;
+  }
+  done('写真を探しています…');
+  const cacheKey = `${c.lat},${c.lon}`;
+  let images = mly.cache.get(cacheKey);
+  if (!images) {
+    const res = await api(`/api/mapillary/images?lat=${c.lat}&lon=${c.lon}`);
+    if (req !== mly.req) return;
+    if (res.status !== 200) return done(res.data?.error || '写真を探せませんでした。エディタを起動し直してください');
+    images = res.data.images;
+    mly.cache.set(cacheKey, images);
+  }
+  const shown = mlyPick(images, e, c);
+  mly.shown = shown;
+  list.innerHTML = shown.map(i => `<button class="m-item" data-id="${esc(i.id)}"><img src="${esc(i.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer"><span>${esc(new Date(i.at).toLocaleDateString('ja-JP'))}${i.pano ? ' 360度' : ''}</span><span>${esc(i.by)}</span></button>`).join('');
+  list.querySelectorAll('.m-item').forEach(b => b.onclick = () => mlyOpen(shown.find(i => i.id === b.dataset.id)).catch(err => { note.textContent = err.message; }));
+  mly.facing = mlyTarget(e);
+  mlyDrawMap();
+  if (!shown.length) return done(mly.since ? '合う写真がありません。「全期間」か、「この行の位置と向きだけ」を外して探してください' : '合う写真がありません。「この行の位置と向きだけ」を外すか、現地で確認してください', `0 / ${images.length} 枚`);
+  done('', `${shown.length} / ${images.length} 枚`);
+  $('#mViewer').style.visibility = '';
+  try { await mlyOpen(shown[0]); } catch (err) { if (req === mly.req) note.textContent = err.message; }
+}
 function geoToPx(lat, lon, z){
   const n = 256 * 2 ** z, s = Math.sin(lat * Math.PI / 180);
   return [(lon + 180) / 360 * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n];
@@ -768,11 +1005,12 @@ function pxToGeo(x, y, z){
 }
 const aerRotated = () => !aer.north && st.dir === '南行き';   // 図と同じく、進行方向を上にする
 function renderPane(){
-  const on = st.pane === 'aerial';
-  $('#preview').hidden = on; $('#aerial').hidden = !on;
-  $('#ptDiagram').hidden = on; $('#ptAerial').hidden = !on;
+  const on = st.pane === 'aerial', photo = st.pane === 'photo';
+  $('#preview').hidden = on || photo; $('#aerial').hidden = !on; $('#photo').hidden = !photo;
+  $('#ptDiagram').hidden = on || photo; $('#ptAerial').hidden = !on; $('#ptPhoto').hidden = !photo;
   $('#pane').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === st.pane));
   renderAerial();
+  renderPhoto();
 }
 function renderAerial(){
   if (st.pane !== 'aerial') return;
@@ -804,35 +1042,42 @@ function drawAerial(){
   $('#aNote').textContent = aer.lat === null
     ? (aer.point ? `「${aer.point}」の座標がありません（CSV と同じ名前の .coords.json に追加すると表示できます）` : '行を選ぶと、その地点の写真を表示します') : '';
   layer.style.transform = aerRotated() ? 'rotate(180deg)' : '';
-  const keep = new Set();
   if (aer.lat !== null) {
-    const w = box.clientWidth, h = box.clientHeight;
-    const tz = Math.min(aer.z, AER.tileMaxZ), scale = 2 ** (aer.z - tz), size = 256 * scale;
-    const [cx, cy] = geoToPx(aer.lat, aer.lon, tz);
-    const last = 2 ** tz - 1;
-    const x0 = Math.floor((cx - w / 2 / scale) / 256), x1 = Math.floor((cx + w / 2 / scale) / 256);
-    const y0 = Math.floor((cy - h / 2 / scale) / 256), y1 = Math.floor((cy + h / 2 / scale) / 256);
-    for (let y = Math.max(0, y0); y <= Math.min(last, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(last, x1); x++) {
-      const key = `${tz}/${x}/${y}`; keep.add(key);
-      let img = aer.tiles.get(key);
-      if (!img) {
-        img = new Image(); img.alt = ''; img.draggable = false;
-        img.onerror = () => { img.style.visibility = 'hidden'; };
-        img.src = AER.url(tz, x, y);
-        aer.tiles.set(key, img); layer.insertBefore(img, mark);
-      }
-      img.style.width = img.style.height = (size + 1) + 'px';   // 継ぎ目に線が出ないよう 1px 重ねる
-      img.style.left = Math.round((x * 256 - cx) * scale + w / 2) + 'px';
-      img.style.top = Math.round((y * 256 - cy) * scale + h / 2) + 'px';
-    }
+    const toPx = placeTiles(box, layer, mark, aer.tiles, AER, aer.lat, aer.lon, aer.z);
     mark.hidden = !c;
     if (c) {
-      const [mx, my] = geoToPx(c.lat, c.lon, tz);
-      mark.style.left = ((mx - cx) * scale + w / 2) + 'px';
-      mark.style.top = ((my - cy) * scale + h / 2) + 'px';
+      const [mx, my] = toPx(c.lat, c.lon);
+      mark.style.left = mx + 'px';
+      mark.style.top = my + 'px';
     }
-  } else mark.hidden = true;
-  for (const [key, img] of aer.tiles) if (!keep.has(key)) { img.remove(); aer.tiles.delete(key); }
+  } else {
+    mark.hidden = true;
+    for (const [key, img] of aer.tiles) { img.remove(); aer.tiles.delete(key); }
+  }
+}
+// 箱いっぱいにタイルを並べ、緯度経度を箱の中の位置に直す関数を返す
+function placeTiles(box, layer, before, tiles, src, lat, lon, z){
+  const w = box.clientWidth, h = box.clientHeight;
+  const tz = Math.min(z, src.tileMaxZ), scale = 2 ** (z - tz), size = 256 * scale;
+  const [cx, cy] = geoToPx(lat, lon, tz);
+  const last = 2 ** tz - 1, keep = new Set();
+  const x0 = Math.floor((cx - w / 2 / scale) / 256), x1 = Math.floor((cx + w / 2 / scale) / 256);
+  const y0 = Math.floor((cy - h / 2 / scale) / 256), y1 = Math.floor((cy + h / 2 / scale) / 256);
+  for (let y = Math.max(0, y0); y <= Math.min(last, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(last, x1); x++) {
+    const key = `${tz}/${x}/${y}`; keep.add(key);
+    let img = tiles.get(key);
+    if (!img) {
+      img = new Image(); img.alt = ''; img.draggable = false;
+      img.onerror = () => { img.style.visibility = 'hidden'; };
+      img.src = src.url(tz, x, y);
+      tiles.set(key, img); layer.insertBefore(img, before);
+    }
+    img.style.width = img.style.height = (size + 1) + 'px';   // 継ぎ目に線が出ないよう 1px 重ねる
+    img.style.left = Math.round((x * 256 - cx) * scale + w / 2) + 'px';
+    img.style.top = Math.round((y * 256 - cy) * scale + h / 2) + 'px';
+  }
+  for (const [key, img] of tiles) if (!keep.has(key)) { img.remove(); tiles.delete(key); }
+  return (la, lo) => { const [x, y] = geoToPx(la, lo, tz); return [(x - cx) * scale + w / 2, (y - cy) * scale + h / 2]; };
 }
 function aerZoom(d){ aer.z = Math.min(AER.maxZ, Math.max(AER.minZ, aer.z + d)); drawAerial(); }
 (function wireAerial(){
@@ -857,7 +1102,36 @@ function aerZoom(d){ aer.z = Math.min(AER.maxZ, Math.max(AER.minZ, aer.z + d)); 
   $('#aTurn').onclick = () => { aer.north = !aer.north; drawAerial(); };
   $('#aHome').onclick = () => { aer.point = undefined; renderAerial(); };
   $('#pane').querySelectorAll('button').forEach(b => b.onclick = () => { st.pane = b.dataset.p; renderPane(); });
-  window.addEventListener('resize', drawAerial);
+  $('#mSince').querySelectorAll('button').forEach(b => b.onclick = () => { mly.since = b.dataset.s; renderPhoto(); });
+  $('#mMatch').onchange = ev => { mly.match = ev.target.checked; renderPhoto(); };
+  $('#mUse').onclick = () => {
+    const e = byId(st.sel), m = mly.current;
+    if (e && m) edit(() => { e['出典'] = `Mapillary（${m.by}、${mlyDate(m.at)}撮影、ID ${m.id}）`; e['確度'] = '資'; });
+  };
+  const map = $('#mMap'); let mapDrag = null;
+  map.addEventListener('pointerdown', ev => {
+    if (ev.target.closest('a, .m-dot')) return;
+    mapDrag = {x: ev.clientX, y: ev.clientY}; map.setPointerCapture(ev.pointerId); map.classList.add('drag');
+  });
+  map.addEventListener('pointermove', ev => {
+    if (!mapDrag) return;
+    const m = mly.map, [px, py] = geoToPx(m.lat, m.lon, m.z);
+    Object.assign(m, pxToGeo(px - (ev.clientX - mapDrag.x), py - (ev.clientY - mapDrag.y), m.z));
+    mapDrag = {x: ev.clientX, y: ev.clientY};
+    mlyDrawMap();
+  });
+  const mapEnd = () => { mapDrag = null; map.classList.remove('drag'); };
+  map.addEventListener('pointerup', mapEnd); map.addEventListener('pointercancel', mapEnd);
+  map.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    mly.map.z = Math.min(20, Math.max(14, mly.map.z + (ev.deltaY < 0 ? 1 : -1)));
+    mlyDrawMap();
+  }, {passive:false});
+  $('#mDots').addEventListener('click', ev => {
+    const image = mly.shown.find(i => i.id === ev.target.dataset?.id);
+    if (image) mlyOpen(image).catch(err => { $('#mNote').textContent = err.message; });
+  });
+  window.addEventListener('resize', () => { drawAerial(); mlyDrawMap(); });
   renderPane();
 })();
 

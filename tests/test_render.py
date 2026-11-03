@@ -242,6 +242,37 @@ class EditorTest(unittest.TestCase):
             coords.write_text('{"X":{"lat":35.0,"lon":135.7},"Y":{"lat":"?"},"Z":{"lat":99,"lon":0},"W":1}', encoding="utf-8")
             self.assertEqual(editor.load_coords(csv_path), {"X": {"lat": 35.0, "lon": 135.7}})
 
+    def test_load_env_value(self):
+        with tempfile.TemporaryDirectory() as d:
+            env = Path(d) / ".env"
+            self.assertEqual(editor.load_env_value("A", env), "")  # ファイルなし
+            env.write_text('# メモ\nA="x|y=z"\nB = 2\n', encoding="utf-8")
+            self.assertEqual(editor.load_env_value("A", env), "x|y=z")
+            self.assertEqual(editor.load_env_value("B", env), "2")
+            self.assertEqual(editor.load_env_value("C", env), "")
+
+    def test_mapillary_images(self):
+        calls = []
+
+        def fetch(params, token):
+            calls.append((params, token))
+            base = {"captured_at": 1000, "creator": {"username": "u"}, "is_pano": False, "quality_score": 0.5,
+                    "thumb_256_url": "t"}
+            return [{**base, "id": 1, "geometry": {"coordinates": [135.0, 35.0]},
+                     "computed_geometry": {"coordinates": [135.1, 35.1]}, "compass_angle": 10, "computed_compass_angle": 0,
+                     "on_foot": True, "sequence": "s1"},
+                    {**base, "id": 2, "geometry": {"coordinates": [135.2, 35.2]}, "compass_angle": 20},
+                    {"id": 3}]   # 位置も日時もない写真は除く
+
+        images = editor.mapillary_images(35.0, 135.0, "tok", fetch)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][1], "tok")
+        self.assertEqual(calls[0][0]["bbox"], "134.999400,34.999100,135.000600,35.000900")
+        self.assertEqual([i["id"] for i in images], ["1", "2"])
+        self.assertEqual((images[0]["lat"], images[0]["heading"]), (35.1, 0))   # 処理後の位置と向きを優先
+        self.assertEqual((images[1]["lat"], images[1]["heading"]), (35.2, 20))
+        self.assertEqual((images[0]["foot"], images[0]["seq"], images[1]["foot"], images[1]["seq"]), (True, "s1", False, ""))
+
 
 if __name__ == "__main__":
     unittest.main()
