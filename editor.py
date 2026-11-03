@@ -168,6 +168,26 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def load_coords(csv_path: Path) -> dict[str, dict[str, float]]:
+    """CSV と同じフォルダの <CSV名>.coords.json（地点名→緯度経度）を読む。なければ空。"""
+    path = csv_path.with_name(csv_path.stem + ".coords.json")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    out = {}
+    for name, c in data.items():
+        try:
+            lat, lon = float(c["lat"]), float(c["lon"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if -85 < lat < 85 and -180 <= lon <= 180:
+            out[name] = {"lat": lat, "lon": lon}
+    return out
+
+
 # ---------------------------------------------------------------- 状態
 
 class Store:
@@ -323,7 +343,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {"file": st.path.name, "path": str(st.path), "html": str(st.html_path),
                                  "header": st.header, "entries": st.entries,
                                  "codes": render.LANE_CODES, "kinds": render.KINDS,
-                                 "directions": render.DIRECTIONS})
+                                 "directions": render.DIRECTIONS, "coords": load_coords(st.path)})
         elif path == "/view":
             with st.lock:
                 _, _, model = st.analyze(st.working)

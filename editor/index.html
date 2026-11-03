@@ -151,6 +151,20 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
 .preview svg{background:#fff;border:1px solid var(--line);border-radius:6px;display:block}
 .preview.fit svg{max-width:100%;height:auto}
 .preview [data-line]{cursor:pointer}
+.ptgroup{display:contents}
+.ptgroup[hidden]{display:none}
+.aerial{position:relative;flex:1;min-height:0;overflow:hidden;background:#333;cursor:grab;touch-action:none;user-select:none}
+.aerial[hidden]{display:none}
+.aerial.drag{cursor:grabbing}
+.a-layer{position:absolute;inset:0}
+.a-layer img{position:absolute;max-width:none;pointer-events:none}
+.a-mark{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;pointer-events:none;
+  background:linear-gradient(#ff2d2d,#ff2d2d) center/2px 100% no-repeat,linear-gradient(#ff2d2d,#ff2d2d) center/100% 2px no-repeat}
+.a-tag{position:absolute;background:rgba(255,255,255,.88);border-radius:4px;padding:2px 6px;font-size:12px}
+.a-north{top:8px;left:8px;font-weight:700}
+.a-note{top:8px;left:50%;transform:translateX(-50%);max-width:80%}
+.a-note:empty{display:none}
+.a-attr{right:4px;bottom:4px;cursor:auto}
 .lint{max-height:30vh;overflow:auto;background:var(--card);border-top:1px solid var(--line)}
 .lint summary{padding:7px 12px;cursor:pointer;font-size:13px;font-weight:700;position:sticky;top:0;background:var(--card)}
 .lint ul{list-style:none;margin:0;padding:0 12px 8px;font-size:12px}
@@ -177,6 +191,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
   .list{max-height:42vh}
   .form{overflow:visible}
   .preview{max-height:85vh}
+  .aerial{height:70vh;flex:none}
 }
 </style>
 </head>
@@ -217,12 +232,28 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
   <section class="col"><div class="form" id="form"></div></section>
   <section class="col">
     <div class="ptools">
-      <span class="small muted">進行方向が上（下から上へ進む）</span>
-      <span class="small muted">大きさ</span>
-      <span class="seg" id="zoom"><button data-z="fit">幅に合わせる</button><button data-z="1">等倍</button></span>
-      <span class="small muted">図をクリックするとその行を選びます</span>
+      <span class="seg" id="pane"><button data-p="diagram">図</button><button data-p="aerial">航空写真</button></span>
+      <span class="ptgroup" id="ptDiagram">
+        <span class="small muted">進行方向が上（下から上へ進む）</span>
+        <span class="small muted">大きさ</span>
+        <span class="seg" id="zoom"><button data-z="fit">幅に合わせる</button><button data-z="1">等倍</button></span>
+        <span class="small muted">図をクリックするとその行を選びます</span>
+      </span>
+      <span class="ptgroup" id="ptAerial" hidden>
+        <button class="btn s" id="aOut" title="縮小">－</button>
+        <button class="btn s" id="aIn" title="拡大">＋</button>
+        <button class="btn s" id="aTurn"></button>
+        <button class="btn s" id="aHome" title="地点の座標に戻します">中央に戻す</button>
+        <span class="small muted">ドラッグで移動、ホイールで拡大縮小</span>
+      </span>
     </div>
     <div class="preview fit" id="preview"></div>
+    <div class="aerial" id="aerial" hidden>
+      <div class="a-layer" id="aLayer"><div class="a-mark" id="aMark" hidden></div></div>
+      <div class="a-tag a-north" id="aNorth"></div>
+      <div class="a-tag a-note" id="aNote"></div>
+      <div class="a-tag a-attr">出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>（全国最新写真）</div>
+    </div>
     <details class="lint" id="lintbox" open><summary id="lintsum">検証結果</summary><ul id="lint"></ul></details>
   </section>
 </div>
@@ -239,9 +270,10 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
     <li><b>左の一覧で行を選ぶ</b>：交差点ごとに「手前」「直後」が並んでいます。点の色で入力状況が分かります（灰＝未入力、青＝入力済み、橙＝警告、赤＝エラー）。</li>
     <li><b>① 車線</b>：進行方向に向かって左から順に、ボタンで車線を足します。車線をクリックして選ぶと、置き換え・移動・削除ができます。</li>
     <li><b>② 接続</b>：この行の車線が次の行でどの車線になるか。下の段（この行）の車線を選んでから、上の段（次の行）の車線をクリックしてつなぎます。曲がって出ていく車線は「左へ離脱」「右へ離脱」。何もしなければ<b>自動補完</b>（点線）になります。</li>
-    <li><b>③ 出典・確度</b>：どこで確かめたか。確度は 確（現地・ストリートビュー）／資（資料）／推（推定）。</li>
+    <li><b>③ 出典・確度</b>：どこで確かめたか。確度は 確（現地・自分で撮った写真）／資（資料）／推（推定）。</li>
     <li><b>保存</b>（<kbd>Ctrl</kbd>+<kbd>S</kbd>）：元のファイルは history/backups/ に残り、変更点は history/changes.csv に記録されます。</li>
   </ol>
+  <p class="small muted">右上の「航空写真」で、選んだ行の地点の写真（地理院タイル）を見られます。写真は撮影時期が古いことがあるので、今の車線と違う場合があります。</p>
   <p class="small muted">分からない所は空欄のままで大丈夫です。図では「未入力」「対応未定」と表示され、推測では埋めません。<br>
   キー操作：<kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> 行の移動、<kbd>Ctrl</kbd>+<kbd>Z</kbd> 元に戻す</p>
   <p style="text-align:right;margin:12px 0 0"><button class="btn primary" id="helpClose">はじめる</button></p>
@@ -252,9 +284,9 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
 const GLYPH = {L:'↰',S:'↑',R:'↱',SL:'↰↑',SR:'↑↱',LSR:'↰↑↱',B:'バス','?':'?'};
 const CODE_NAME = {L:'左折専用',S:'直進',R:'右折専用',SL:'直進・左折',SR:'直進・右折',LSR:'全方向',B:'バス','?':'不明'};
 const KIND_WHAT = {'手前':'停止線の手前の車線', '直後':'交差点を抜けた直後の車線', '区間中':'交差点のあいだの途中の車線'};
-const CONFS = [['確','現地・SVで確認'],['資','資料にある'],['推','推定'],['','空欄（不明）']];
+const CONFS = [['確','現地・自分の写真'],['資','資料にある'],['推','推定'],['','空欄（不明）']];
 const st = {header:[], entries:[], codes:[], kinds:[], directions:[], dir:'南行き', zoom:'fit', filter:'all', q:'',
-  sel:null, lane:null, src:null, dirty:false, preview:null, undo:[], seq:0, newId:0, pendingUndo:false};
+  sel:null, lane:null, src:null, dirty:false, preview:null, undo:[], seq:0, newId:0, pendingUndo:false, pane:'diagram', coords:{}};
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -327,7 +359,7 @@ async function api(path, body){
 async function load(){
   const {data} = await api('/api/data');
   Object.assign(st, {header: data.header, entries: data.entries, codes: data.codes, kinds: data.kinds,
-    directions: data.directions, dirty:false, undo:[]});
+    directions: data.directions, coords: data.coords || {}, dirty:false, undo:[]});
   $('#file').textContent = data.path;
   $('#file').title = data.path + '\n保存すると図も作り直します: ' + data.html;
   if (!st.sel || !byId(st.sel)) st.sel = rowsOf(st.dir)[0]?._id || null;
@@ -367,7 +399,7 @@ function banner(msg, kind = 'warn', actions = []){
 }
 
 // ---------------------------------------------------------------- 表示
-function renderAll(){ renderHeader(); renderDirs(); renderList(); renderForm(); renderPreview(); renderLint(); }
+function renderAll(){ renderHeader(); renderDirs(); renderList(); renderForm(); renderPreview(); renderLint(); renderAerial(); }
 
 function renderHeader(){
   const s = $('#savestate');
@@ -411,7 +443,7 @@ function select(id){
   const e = byId(id); if (!e) return;
   if (dirOf(e) !== st.dir) { st.dir = dirOf(e); renderDirs(); }
   st.sel = id; st.lane = st.src = null;
-  renderList(); renderForm(); renderPreview(); renderHeader();
+  renderList(); renderForm(); renderPreview(); renderHeader(); renderAerial();
 }
 function move(d){
   const e = byId(st.sel); if (!e) return;
@@ -474,7 +506,7 @@ function renderForm(){
   <div class="step"><h3><span class="no">3</span>出典・確度<span class="st ${e['確度'] ? 'ok' : ''}">${e['確度'] ? '確度：' + esc(e['確度']) : '確度は空欄'}</span></h3>
     <div class="confs" id="f-conf">${CONFS.map(([v,t]) => `<button data-v="${v}" class="${(e['確度'] || '') === v ? 'on' : ''}"><b>${v || '空欄'}</b><span>${t}</span></button>`).join('')}</div>
     <div class="grid2">
-      <label for="f-src">出典</label><input type="text" id="f-src" list="dl-src" data-col="出典" value="${esc(e['出典'])}" placeholder="例: ストリートビュー（2024年5月撮影）／国交省R2資料／現地">
+      <label for="f-src">出典</label><input type="text" id="f-src" list="dl-src" data-col="出典" value="${esc(e['出典'])}" placeholder="例: 現地（2026年11月）／自分の写真（2026年11月撮影）／国交省R2資料">
       <label for="f-memo">メモ</label><textarea id="f-memo" data-col="メモ">${esc(e['メモ'])}</textarea>
     </div>${datalist('dl-src','出典')}
     <div class="ops"><button class="btn s" id="c-copy" ${prev ? '' : 'disabled'}>前の行から出典・確度を写す</button></div>
@@ -692,6 +724,105 @@ function renderLint(){
     : '<li class="muted">問題はありません</li>';
   $('#lint').querySelectorAll('li[data-line]').forEach(li => li.onclick = () => { const id = idOfLine(+li.dataset.line); if (id) select(id); });
 }
+
+// ---------------------------------------------------------------- 航空写真（地理院タイル）
+// タイルはブラウザが地理院から直接読み込む。写真の内容を CSV に自動で入れることはしない。
+const AER = {minZ:14, tileMaxZ:18, maxZ:20, url:(z, x, y) => `https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${z}/${x}/${y}.jpg`};
+const aer = {point:undefined, lat:null, lon:null, z:19, north:false, tiles:new Map()};
+function geoToPx(lat, lon, z){
+  const n = 256 * 2 ** z, s = Math.sin(lat * Math.PI / 180);
+  return [(lon + 180) / 360 * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n];
+}
+function pxToGeo(x, y, z){
+  const n = 256 * 2 ** z;
+  return {lon: x / n * 360 - 180, lat: Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI};
+}
+const aerRotated = () => !aer.north && st.dir === '南行き';   // 図と同じく、進行方向を上にする
+function renderPane(){
+  const on = st.pane === 'aerial';
+  $('#preview').hidden = on; $('#aerial').hidden = !on;
+  $('#ptDiagram').hidden = on; $('#ptAerial').hidden = !on;
+  $('#pane').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === st.pane));
+  renderAerial();
+}
+function renderAerial(){
+  if (st.pane !== 'aerial') return;
+  const point = byId(st.sel)?.['地点'] || '';
+  if (point !== aer.point) {
+    aer.point = point;
+    const c = st.coords[point];
+    aer.lat = c ? c.lat : null; aer.lon = c ? c.lon : null;
+  }
+  drawAerial();
+}
+function drawAerial(){
+  if (st.pane !== 'aerial') return;
+  const box = $('#aerial'), layer = $('#aLayer'), mark = $('#aMark');
+  const c = st.coords[aer.point];
+  $('#aTurn').textContent = aer.north ? '進行方向を上にする' : '北を上にする';
+  $('#aTurn').disabled = st.dir !== '南行き';
+  $('#aHome').disabled = !c;
+  $('#aIn').disabled = aer.z >= AER.maxZ; $('#aOut').disabled = aer.z <= AER.minZ;
+  $('#aNorth').textContent = aerRotated() ? '↓ 北（進行方向が上）' : (st.dir === '北行き' ? '↑ 北（進行方向が上）' : '↑ 北');
+  $('#aNote').textContent = aer.lat === null
+    ? (aer.point ? `「${aer.point}」の座標がありません（CSV と同じ名前の .coords.json に追加すると表示できます）` : '行を選ぶと、その地点の写真を表示します') : '';
+  layer.style.transform = aerRotated() ? 'rotate(180deg)' : '';
+  const keep = new Set();
+  if (aer.lat !== null) {
+    const w = box.clientWidth, h = box.clientHeight;
+    const tz = Math.min(aer.z, AER.tileMaxZ), scale = 2 ** (aer.z - tz), size = 256 * scale;
+    const [cx, cy] = geoToPx(aer.lat, aer.lon, tz);
+    const last = 2 ** tz - 1;
+    const x0 = Math.floor((cx - w / 2 / scale) / 256), x1 = Math.floor((cx + w / 2 / scale) / 256);
+    const y0 = Math.floor((cy - h / 2 / scale) / 256), y1 = Math.floor((cy + h / 2 / scale) / 256);
+    for (let y = Math.max(0, y0); y <= Math.min(last, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(last, x1); x++) {
+      const key = `${tz}/${x}/${y}`; keep.add(key);
+      let img = aer.tiles.get(key);
+      if (!img) {
+        img = new Image(); img.alt = ''; img.draggable = false;
+        img.onerror = () => { img.style.visibility = 'hidden'; };
+        img.src = AER.url(tz, x, y);
+        aer.tiles.set(key, img); layer.insertBefore(img, mark);
+      }
+      img.style.width = img.style.height = size + 'px';
+      img.style.left = ((x * 256 - cx) * scale + w / 2) + 'px';
+      img.style.top = ((y * 256 - cy) * scale + h / 2) + 'px';
+    }
+    mark.hidden = !c;
+    if (c) {
+      const [mx, my] = geoToPx(c.lat, c.lon, tz);
+      mark.style.left = ((mx - cx) * scale + w / 2) + 'px';
+      mark.style.top = ((my - cy) * scale + h / 2) + 'px';
+    }
+  } else mark.hidden = true;
+  for (const [key, img] of aer.tiles) if (!keep.has(key)) { img.remove(); aer.tiles.delete(key); }
+}
+function aerZoom(d){ aer.z = Math.min(AER.maxZ, Math.max(AER.minZ, aer.z + d)); drawAerial(); }
+(function wireAerial(){
+  const box = $('#aerial'); let drag = null;
+  box.addEventListener('pointerdown', ev => {
+    if (aer.lat === null || ev.target.closest('a')) return;
+    drag = {x: ev.clientX, y: ev.clientY}; box.setPointerCapture(ev.pointerId); box.classList.add('drag');
+  });
+  box.addEventListener('pointermove', ev => {
+    if (!drag) return;
+    const sign = aerRotated() ? -1 : 1;
+    const [px, py] = geoToPx(aer.lat, aer.lon, aer.z);
+    Object.assign(aer, pxToGeo(px - sign * (ev.clientX - drag.x), py - sign * (ev.clientY - drag.y), aer.z));
+    drag = {x: ev.clientX, y: ev.clientY};
+    drawAerial();
+  });
+  const end = () => { drag = null; box.classList.remove('drag'); };
+  box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+  box.addEventListener('wheel', ev => { ev.preventDefault(); aerZoom(ev.deltaY < 0 ? 1 : -1); }, {passive:false});
+  $('#aIn').onclick = () => aerZoom(1);
+  $('#aOut').onclick = () => aerZoom(-1);
+  $('#aTurn').onclick = () => { aer.north = !aer.north; drawAerial(); };
+  $('#aHome').onclick = () => { aer.point = undefined; renderAerial(); };
+  $('#pane').querySelectorAll('button').forEach(b => b.onclick = () => { st.pane = b.dataset.p; renderPane(); });
+  window.addEventListener('resize', drawAerial);
+  renderPane();
+})();
 
 // ---------------------------------------------------------------- 行の操作
 function newRow(base, extra){

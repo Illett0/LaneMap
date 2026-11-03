@@ -3,8 +3,10 @@ __pycache__/
 editor.pid
 logs/
 *.csv.tmp
+.env
 
 # 利用者ごとのデータ（CSV・作った図・編集履歴）はローカルにだけ置く
 /*.csv
+/*.coords.json
 /lanes.html
 history/

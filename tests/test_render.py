@@ -1,5 +1,6 @@
 """render.py / editor.py のテスト（python -m unittest discover -s tests）"""
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -224,6 +225,16 @@ class EditorTest(unittest.TestCase):
         row["車線"] = "S S"
         changes = editor.diff_entries(header, old, entries)
         self.assertEqual([(c[0], c[2], c[3], c[4]) for c in changes], [("変更", "車線", "", "S S")])
+
+    def test_load_coords(self):
+        with tempfile.TemporaryDirectory() as d:
+            csv_path = Path(d) / "a.csv"
+            self.assertEqual(editor.load_coords(csv_path), {})  # ファイルなし
+            coords = csv_path.with_name("a.coords.json")
+            coords.write_text("{壊れた", encoding="utf-8")
+            self.assertEqual(editor.load_coords(csv_path), {})
+            coords.write_text('{"X":{"lat":35.0,"lon":135.7},"Y":{"lat":"?"},"Z":{"lat":99,"lon":0},"W":1}', encoding="utf-8")
+            self.assertEqual(editor.load_coords(csv_path), {"X": {"lat": 35.0, "lon": 135.7}})
 
 
 if __name__ == "__main__":

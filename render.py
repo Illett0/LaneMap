@@ -958,7 +958,7 @@ def render_legend() -> str:
                 f'viewBox="0 0 {w} 34">{body}</svg>')
 
     items = [(sw(f'<rect class="ln c-{CONF_CLASS[c]}" x="12" y="2" width="20" height="30" rx="3"/>'), t)
-             for c, t in (("確", "確：現地・ストリートビューで確認"), ("資", "資：資料にある"),
+             for c, t in (("確", "確：現地・自分で撮った写真で確認"), ("資", "資：資料にある"),
                           ("推", "推：推定"), ("", "空欄：確度不明"))]
     items += [
         (sw(f'<path class="rb c-k" d="{_ribbon(4, 18, 2, 22, 25, 32)}"/>'
