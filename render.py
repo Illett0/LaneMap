@@ -240,6 +240,8 @@ def _make_row(line: int, rec: dict, issues: list[Issue]) -> Row | None:
     if row.conf not in CONF_RANK:
         add("エラー", f"確度 '{row.conf}' が不正です（確／資／推／空欄）")
         row.conf = ""
+    if "撮影者名" in row.source or "、撮影日）" in row.source:   # エディタが入れるひな形の残り
+        add("警告", "出典のひな形が残っています。撮影者名と撮影日を書き換えてください")
     if cross_sides(row.cross) is None:
         add("エラー", f"交差道路 '{row.cross}' の書き方が不正です（例: 七条通　東:紫明通 西:鞍馬口通　東:二条通）")
         row.cross = ""

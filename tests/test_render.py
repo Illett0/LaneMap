@@ -196,6 +196,12 @@ class LintTest(unittest.TestCase):
         self.assertEqual(m.routes["南行き"].rows[0].lanes, ["S", "S"])
         self.assertTrue(any("全角" in s for s in messages(m, "警告")))
 
+    def test_source_template_left_is_warned(self):
+        for source, warned in [("Mapillary（撮影者名、撮影日）", True), ("Mapillary（撮影者名、2026年2月21日）", True),
+                               ("Mapillary（foo、撮影日）", True), ("Mapillary（foo、2026年2月21日撮影）", False)]:
+            m = model_of(f"南行き,1,X,直後,S,,{source},資,\n")
+            self.assertEqual(any("ひな形" in s for s in messages(m, "警告")), warned, source)
+
     def test_bom(self):
         records, issues = render.parse_csv_text("﻿" + HEAD + "南行き,1,X,直後,S,,,確,\n")
         self.assertEqual(len(records), 1)

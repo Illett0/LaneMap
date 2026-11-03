@@ -153,6 +153,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
 .preview [data-line]{cursor:pointer}
 .ptgroup{display:contents}
 .ptgroup[hidden]{display:none}
+.ml-btns{display:inline-flex;gap:4px}
 .aerial{position:relative;flex:1;min-height:0;overflow:hidden;background:#333;cursor:grab;touch-action:none;user-select:none}
 .aerial[hidden]{display:none}
 .aerial.drag{cursor:grabbing}
@@ -244,8 +245,12 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
         <button class="btn s" id="aIn" title="拡大">＋</button>
         <button class="btn s" id="aTurn"></button>
         <button class="btn s" id="aHome" title="地点の座標に戻します">中央に戻す</button>
-        <a class="btn s" id="aMapillary" target="_blank" rel="noopener" title="今の写真の中心を、Mapillary の地図で別タブに開きます。写真から入れた車線は確度を「資」にし、出典に撮影者と撮影日を書きます">Mapillary で開く</a>
+        <span class="ml-btns">
+          <a class="btn s" id="aMapillary" target="_blank" rel="noopener" title="今の写真の中心を、2024年以降の写真に絞って Mapillary の地図で別タブに開きます。写真から入れた車線は確度を「資」にし、出典に撮影者と撮影日を書きます">Mapillary（2024年以降）</a>
+          <a class="btn s" id="aMapillaryAll" target="_blank" rel="noopener" title="今の写真の中心を、期間を絞らずに Mapillary の地図で別タブに開きます。2024年以降に写真がないときや、読めないときに使います">全期間</a>
+        </span>
         <span class="small muted">ドラッグで移動、ホイールで拡大縮小</span>
+        <span class="small" id="aGuide"></span>
       </span>
     </div>
     <div class="preview fit" id="preview"></div>
@@ -274,7 +279,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
     <li><b>③ 出典・確度</b>：どこで確かめたか。確度は 確（現地・自分で撮った写真）／資（資料）／推（推定）。</li>
     <li><b>保存</b>（<kbd>Ctrl</kbd>+<kbd>S</kbd>）：元のファイルは history/backups/ に残り、変更点は history/changes.csv に記録されます。</li>
   </ol>
-  <p class="small muted">右上の「航空写真」で、選んだ行の地点の写真（地理院タイル）を見られます。写真は撮影時期が古いことがあるので、今の車線と違う場合があります。路面の矢印は「Mapillary で開く」で路上の写真を探せます。そこから入れた車線は確度を 資 にし、出典に撮影者と撮影日を書きます。</p>
+  <p class="small muted">右上の「航空写真」で、選んだ行の地点の写真（地理院タイル）を見られます。写真は撮影時期が古いことがあるので、今の車線と違う場合があります。路面の矢印は「Mapillary（2024年以降）」で路上の写真を探せます（写真がなければ「全期間」）。探す写真の向きは、ボタンの近くに出ます。そこから入れた車線は確度を 資 にし、出典に撮影者と撮影日を書きます（③の「Mapillary の写真から入れる」でひな形が入ります）。</p>
   <p class="small muted">分からない所は空欄のままで大丈夫です。図では「未入力」「対応未定」と表示され、推測では埋めません。<br>
   キー操作：<kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> 行の移動、<kbd>Ctrl</kbd>+<kbd>Z</kbd> 元に戻す</p>
   <p style="text-align:right;margin:12px 0 0"><button class="btn primary" id="helpClose">はじめる</button></p>
@@ -438,7 +443,13 @@ function renderList(){
       }).join('')}</div></div>`;
   }).join('') || '<p class="small muted" style="padding:8px">当てはまる交差点はありません。</p>';
   $('#list').querySelectorAll('.pill').forEach(p => p.onclick = () => select(p.dataset.id));
-  $('#list .pill.on')?.scrollIntoView({block:'nearest'});
+  // 一覧の中だけを動かす（scrollIntoView だと、画面の幅が狭いときにページごと動いて入力欄が隠れる）
+  const list = $('#list'), on = list.querySelector('.pill.on');
+  if (on) {
+    const r = on.getBoundingClientRect(), c = list.getBoundingClientRect();
+    if (r.top < c.top) list.scrollTop += r.top - c.top;
+    else if (r.bottom > c.bottom) list.scrollTop += r.bottom - c.bottom;
+  }
 }
 function select(id){
   const e = byId(id); if (!e) return;
@@ -510,7 +521,7 @@ function renderForm(){
       <label for="f-src">出典</label><input type="text" id="f-src" list="dl-src" data-col="出典" value="${esc(e['出典'])}" placeholder="例: 現地（2026年11月）／自分の写真（2026年11月撮影）／国交省R2資料">
       <label for="f-memo">メモ</label><textarea id="f-memo" data-col="メモ">${esc(e['メモ'])}</textarea>
     </div>${datalist('dl-src','出典')}
-    <div class="ops"><button class="btn s" id="c-copy" ${prev ? '' : 'disabled'}>前の行から出典・確度を写す</button></div>
+    <div class="ops"><button class="btn s" id="c-copy" ${prev ? '' : 'disabled'}>前の行から出典・確度を写す</button><button class="btn s" id="c-mapillary" title="出典にひな形を入れ、確度を「資」にします。撮影者名と撮影日は Mapillary の写真の表示を見て書き換えてください">Mapillary の写真から入れる</button></div>
   </div>
 
   <div class="step"><h3>この行の検証結果</h3><ul class="rowissues" id="rowissues"></ul></div>`;
@@ -541,8 +552,15 @@ function renderForm(){
   $('#l-clear').onclick = () => edit(() => { e['車線'] = ''; st.lane = null; });
   $('#l-copy').onclick = () => edit(() => { e['車線'] = lanesOf(prev).join(' '); });
   $('#c-copy').onclick = () => edit(() => { e['出典'] = prev['出典'] || ''; e['確度'] = prev['確度'] || ''; });
+  $('#c-mapillary').onclick = () => {
+    edit(() => { e['出典'] = `${ML_SOURCE.head}${ML_SOURCE.blank}）`; e['確度'] = '資'; });
+    const src = $('#f-src');   // すぐ打ち直せるよう、書き換える部分を選んでおく
+    src.focus();
+    src.setSelectionRange(ML_SOURCE.head.length, ML_SOURCE.head.length + ML_SOURCE.blank.length);
+  };
   renderConn();
   renderLive();
+  renderMapillaryGuide();
 }
 
 // ---- 接続（ミニ図をクリックしてつなぐ）
@@ -730,6 +748,16 @@ function renderLint(){
 // タイルはブラウザが地理院から直接読み込む。写真の内容を CSV に自動で入れることはしない。
 const AER = {minZ:14, tileMaxZ:18, maxZ:20, url:(z, x, y) => `https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${z}/${x}/${y}.jpg`};
 const aer = {point:undefined, lat:null, lon:null, z:19, north:false, tiles:new Map()};
+const ML_FROM = '2024-01-01';   // 「Mapillary（2024年以降）」の開始日。ボタンの文字と合わせて変える
+const ML_SOURCE = {head:'Mapillary（', blank:'撮影者名、撮影日'};
+// 選んだ行で、どの向きの写真を探せばよいかを示す
+function mapillaryGuide(e){
+  if (!e || !['南行き', '北行き'].includes(e['方向'])) return '';
+  const to = e['方向'] === '南行き' ? '南' : '北', from = to === '南' ? '北' : '南';
+  const where = {'手前': `交差点の${from}側で`, '直後': `交差点の${to}側で`, '区間中': 'この地点の付近で'}[e['種別']] || '';
+  return `探す写真：${e['方向']}${e['種別'] ? '・' + e['種別'] : ''} → ${where}${where ? '、' : ''}${to}へ向かう写真`;
+}
+function renderMapillaryGuide(){ $('#aGuide').textContent = aer.lat === null ? '' : mapillaryGuide(byId(st.sel)); }
 function geoToPx(lat, lon, z){
   const n = 256 * 2 ** z, s = Math.sin(lat * Math.PI / 180);
   return [(lon + 180) / 360 * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n];
@@ -764,9 +792,14 @@ function drawAerial(){
   $('#aTurn').disabled = st.dir !== '南行き';
   $('#aHome').disabled = !c;
   $('#aIn').disabled = aer.z >= AER.maxZ; $('#aOut').disabled = aer.z <= AER.minZ;
-  const ml = $('#aMapillary');
-  ml.style.display = aer.lat === null ? 'none' : '';
-  if (aer.lat !== null) ml.href = `https://www.mapillary.com/app/?lat=${aer.lat.toFixed(6)}&lng=${aer.lon.toFixed(6)}&z=18`;
+  const ml = $('#aMapillary'), mlAll = $('#aMapillaryAll');
+  ml.style.display = mlAll.style.display = aer.lat === null ? 'none' : '';
+  if (aer.lat !== null) {
+    const base = `https://www.mapillary.com/app/?lat=${aer.lat.toFixed(6)}&lng=${aer.lon.toFixed(6)}&z=18`;
+    ml.href = `${base}&dateFrom=${ML_FROM}`;
+    mlAll.href = base;
+  }
+  renderMapillaryGuide();
   $('#aNorth').textContent = aerRotated() ? '↓ 北（進行方向が上）' : (st.dir === '北行き' ? '↑ 北（進行方向が上）' : '↑ 北');
   $('#aNote').textContent = aer.lat === null
     ? (aer.point ? `「${aer.point}」の座標がありません（CSV と同じ名前の .coords.json に追加すると表示できます）` : '行を選ぶと、その地点の写真を表示します') : '';
