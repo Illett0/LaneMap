@@ -13,6 +13,9 @@ import render  # noqa: E402
 HEAD = "方向,順,地点,種別,車線,接続,出典,確度,メモ\n"
 
 
+CROSS_HEAD = HEAD.strip() + ",交差道路\n"
+
+
 def model_of(body: str, head: str = HEAD) -> render.Model:
     records, issues = render.parse_csv_text(head + body)
     return render.analyze(records, issues)
@@ -201,6 +204,52 @@ class LintTest(unittest.TestCase):
                                ("Mapillary（foo、撮影日）", True), ("Mapillary（foo、2026年2月21日撮影）", False)]:
             m = model_of(f"南行き,1,X,直後,S,,{source},資,\n")
             self.assertEqual(any("ひな形" in s for s in messages(m, "警告")), warned, source)
+
+    def test_inflow(self):
+        csv = ("南行き,1,X,手前,L S S,1>@ 2>2 3>3 @紫明通>1,,確,,東:紫明通 西:鞍馬口通\n"
+               "南行き,2,X,直後,S S S,,,確,,東:紫明通 西:鞍馬口通\n")
+        m = model_of(csv, CROSS_HEAD)
+        t = m.routes["南行き"].transitions[0]
+        inflow = [l for l in t.links if l.kind == "in"]
+        self.assertEqual([(l.dst, l.name, l.side) for l in inflow], [(0, "紫明通", "L")])   # 南行きの左は東
+        self.assertEqual(t.new_lanes, [])   # 「新しく現れた」にしない
+        self.assertFalse(messages(m, "エラー"))
+        self.assertIn("紫明通から", render.render_svg(m.routes["南行き"]))
+        self.assertIn("@紫明通>1", render.links_to_text(t.links))
+
+    def test_inflow_side_and_name(self):
+        rows = "南行き,2,X,直後,S S S,,,確,,\n"
+        cases = [("@鞍馬口通>3", "東:紫明通 西:鞍馬口通", "R", "鞍馬口通"),   # 名前で右と決まる
+                 ("@<>3", "東:紫明通 西:鞍馬口通", "L", "紫明通"),             # 向きだけ書くと名前は交差道路から
+                 ("@>>1", "東:紫明通 西:鞍馬口通", "R", "鞍馬口通"),
+                 ("@>紫明通>3", "東:紫明通 西:鞍馬口通", "R", "紫明通"),       # 書いた向きを優先
+                 ("@別の道>1", "", "L", "別の道"),                             # 交差道路で決まらなければ車線の位置で
+                 ("@別の道>3", "", "R", "別の道")]
+        for tok, cross, side, name in cases:
+            m = model_of(f"南行き,1,X,手前,S S,1>2 2>3 {tok},,確,,{cross}\n" + rows, CROSS_HEAD)
+            link = next(l for l in m.routes["南行き"].transitions[0].links if l.kind == "in")
+            self.assertEqual((link.side, link.name), (side, name), tok)
+
+    def test_inflow_errors(self):
+        m = model_of("南行き,1,X,手前,S,1>1 @A>5,,確,\n南行き,2,X,直後,S,,,確,\n")
+        self.assertTrue(any("車線5はありません" in e for e in messages(m, "エラー")))
+        m = model_of("南行き,1,X,手前,S,1>1 @A>1 @A>1,,確,\n南行き,2,X,直後,S,,,確,\n")
+        self.assertTrue(any("重複" in s for s in messages(m, "警告")))
+        m = model_of("南行き,1,X,直後,S,@A>1,,確,\n")
+        self.assertTrue(any("最後の行" in s for s in messages(m, "警告")))
+        m = model_of("南行き,1,X,手前,S,1>1 @<>1,,確,,東:Y\n南行き,2,X,直後,S,,,確,,東:Y\n", CROSS_HEAD)
+        self.assertFalse(any("T字路" in s for s in messages(m, "警告")))   # 南行きの左は東で、道路がある
+        m = model_of("南行き,1,X,手前,S,1>1 @>>1,,確,,東:Y\n南行き,2,X,直後,S,,,確,,東:Y\n", CROSS_HEAD)
+        self.assertTrue(any("T字路" in s for s in messages(m, "警告")))
+
+    def test_strip_label_does_not_repeat_side_names(self):
+        csv = "南行き,1,X,手前,S,1>1,,確,,東:紫明通 西:鞍馬口通\n南行き,2,X,直後,S,,,確,,東:紫明通 西:鞍馬口通\n"
+        svg = render.render_svg(model_of(csv, CROSS_HEAD).routes["南行き"])
+        self.assertIn('>┄ X</text>', svg)   # 左の欄は地点名だけ
+        self.assertIn("紫明通（東）", svg)
+        self.assertIn("鞍馬口通（西）", svg)
+        svg = render.render_svg(model_of("南行き,1,X,手前,S,1>1,,確,,七条通\n南行き,2,X,直後,S,,,確,,七条通\n", CROSS_HEAD).routes["南行き"])
+        self.assertIn("七条通（X）", svg)
 
     def test_bom(self):
         records, issues = render.parse_csv_text("﻿" + HEAD + "南行き,1,X,直後,S,,,確,\n")

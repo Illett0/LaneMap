@@ -73,9 +73,12 @@ header h1{font-size:16px;margin:0}
 /* フォーム */
 .form{overflow:auto;flex:1;padding:12px 14px 60px}
 .rowcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px}
-.rowcard .title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.rowcard .title b{font-size:18px}
-.rowcard .what{font-size:12px;color:var(--muted);margin-top:2px}
+/* 行を切り替えても ①②③ の位置が動かないよう、見出しは 1 行に収める */
+.rowcard .title{display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
+.rowcard .title b{font-size:18px;overflow:hidden;text-overflow:ellipsis;min-width:2em}
+.rowcard .title .kind{flex:none}
+.rowcard .title .small{overflow:hidden;text-overflow:ellipsis}
+.rowcard .what{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rowcard .nav{display:flex;gap:6px;margin-top:8px}
 .step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px}
 .step h3{font-size:14px;margin:0 0 2px;display:flex;align-items:center;gap:8px}
@@ -119,19 +122,46 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
 .ops{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 
 /* 接続のミニ図 */
-.connbox{border:1px solid var(--line);border-radius:8px;background:#fbfcfd;padding:6px}
-.connbox svg{display:block;margin:0 auto;max-width:100%}
+/* 行によって中身の量が違っても、③ の位置が動かないよう高さを固定する */
+#connArea{min-height:505px}
+.connbox{border:1px solid var(--line);border-radius:8px;background:#fbfcfd;padding:6px;height:320px}
+.connbox svg{display:block;width:100%;height:306px}
+.connbox.empty{display:flex;align-items:center;justify-content:center;padding:6px 24px;text-align:center}
+.connbox.empty .hint{margin:0}
+#connArea>.hint{min-height:3.1em}
+.autonote{min-height:4.4em}
 .connbox .lbl{font-size:11px;fill:#5f6b7a}
 .connbox .ln{cursor:pointer}
 .connbox .ln rect{fill:#e8edf3;stroke:#9aa5b1;stroke-width:1}
 .connbox .ln.src rect{fill:#dbe6f4;stroke:var(--accent)}
 .connbox .ln.sel rect{fill:#ffe8c7;stroke:var(--sel);stroke-width:2.5}
 .connbox .ln:hover rect{stroke:var(--accent);stroke-width:2}
-.connbox .ln.dim{cursor:default}
 .connbox .ln text{font-size:16px;text-anchor:middle;dominant-baseline:central;font-family:"Segoe UI Symbol","Yu Gothic UI",sans-serif;pointer-events:none}
 .connbox .lk{fill:none;stroke:var(--accent);stroke-width:9;stroke-opacity:.75;stroke-linecap:round}
 .connbox .lk.auto{stroke:#8a96a3;stroke-dasharray:3 6;stroke-width:6}
 .connbox .lk.sel{stroke:var(--sel)}
+.connbox svg{touch-action:none;user-select:none}
+.connbox .ln.src{cursor:grab}
+.connbox .ln.drop rect,.connbox .zone.drop rect{fill:#ffe8c7;stroke:var(--sel);stroke-width:2.5}
+.connbox .zone{cursor:grab}
+.connbox .zone.sel rect{fill:#ffe8c7;stroke:var(--sel);stroke-width:2.5}
+.connbox .zone rect{fill:#f2f4f7;stroke:#9aa5b1;stroke-width:1;stroke-dasharray:4 3}
+.connbox .zone:hover rect{stroke:var(--accent);stroke-width:2}
+.connbox .zone text{font-size:11px;text-anchor:middle;fill:#3d4752;pointer-events:none}
+.connbox .link{cursor:pointer}
+.connbox .link .hit{fill:none;stroke:transparent;stroke-width:18}
+.connbox .link:hover .lk{stroke:#d92d20;stroke-opacity:.85}
+.connbox .ln.pv{cursor:grab}
+.connbox .ln.pv:not([data-p]){cursor:default}
+.connbox .ln.pv rect{fill:#eef1f5;stroke:#9aa5b1}
+.connbox .ln.pv.sel rect{fill:#ffe8c7;stroke:var(--sel);stroke-width:2.5}
+.connbox .ln.pv text{font-size:14px;fill:#3d4752}
+.connbox .pk{fill:none;stroke:#7d8b9a;stroke-width:7;stroke-opacity:.75;stroke-linecap:round}
+.connbox .pk.auto{stroke-dasharray:3 6;stroke-width:5}
+.connbox .pk.sel{stroke:var(--sel)}
+.connbox .link:hover .pk{stroke:#d92d20;stroke-opacity:.85}
+.connbox .qp{font-size:12px;font-weight:700;fill:#8a96a3;text-anchor:middle}
+.connbox .rubber{fill:none;stroke:var(--sel);stroke-width:5;stroke-linecap:round;stroke-dasharray:2 8;pointer-events:none}
 .connbox .xname{font-size:11px;font-weight:700;fill:#1f2933}
 .connbox .q{font-size:13px;font-weight:700;fill:#b54708;text-anchor:middle}
 .conntools{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;align-items:center}
@@ -142,7 +172,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
 .confs button b{display:block;font-size:15px}
 .confs button span{font-size:10px;color:var(--muted)}
 .confs button.on{border-color:var(--accent);background:var(--accent-soft);outline:2px solid var(--accent)}
-.rowissues{list-style:none;margin:0;padding:0;font-size:12px}
+.rowissues{list-style:none;margin:0;padding:0;font-size:12px;min-height:90px}
 .rowissues li{padding:3px 8px;border-radius:5px;margin-bottom:3px}
 
 /* 図 */
@@ -317,7 +347,7 @@ input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var
   <ol>
     <li><b>左の一覧で行を選ぶ</b>：交差点ごとに「手前」「直後」が並んでいます。点の色で入力状況が分かります（灰＝未入力、青＝入力済み、橙＝警告、赤＝エラー）。</li>
     <li><b>① 車線</b>：進行方向に向かって左から順に、ボタンで車線を足します。車線をクリックして選ぶと、置き換え・移動・削除ができます。</li>
-    <li><b>② 接続</b>：この行の車線が次の行でどの車線になるか。下の段（この行）の車線を選んでから、上の段（次の行）の車線をクリックしてつなぎます。曲がって出ていく車線は「左へ離脱」「右へ離脱」。何もしなければ<b>自動補完</b>（点線）になります。</li>
+    <li><b>② 接続</b>：この行の車線が次の行でどの車線になるか。図は上から 次の行・この行・前の行 の3段です。車線を、1つ上の段の車線までドラッグしてつなぎます。前の行からこの行への線も引けるので、行を戻らずに入力できます。曲がって出ていく車線は、左右の「通り」の枠までドラッグします。ほかの通りから入ってくる車線は、枠から車線へドラッグします。線をクリックすると外せます。何もしなければ<b>自動補完</b>（点線）になります。</li>
     <li><b>③ 出典・確度</b>：どこで確かめたか。確度は 確（現地・自分で撮った写真）／資（資料）／推（推定）。</li>
     <li><b>保存</b>（<kbd>Ctrl</kbd>+<kbd>S</kbd>）：元のファイルは history/backups/ に残り、変更点は history/changes.csv に記録されます。</li>
   </ol>
@@ -393,7 +423,7 @@ function doUndo(){
   st.entries = JSON.parse(st.undo.pop());
   if (st.sel && !byId(st.sel)) st.sel = null;
   $('#undo').disabled = !st.undo.length;
-  st.lane = st.src = null;
+  st.lane = st.src = st.psrc = st.zsrc = null;
   changed({form:true});
 }
 
@@ -460,7 +490,7 @@ function renderHeader(){
 function renderDirs(){
   $('#dirs').innerHTML = dirList().map(d => `<button data-d="${esc(d)}" class="${d === st.dir ? 'on' : ''}">${esc(d)}</button>`).join('');
   $('#dirs').querySelectorAll('button').forEach(b => b.onclick = () => {
-    st.dir = b.dataset.d; st.sel = rowsOf(st.dir)[0]?._id || null; st.lane = st.src = null; renderAll();
+    st.dir = b.dataset.d; st.sel = rowsOf(st.dir)[0]?._id || null; st.lane = st.src = st.psrc = st.zsrc = null; renderAll();
   });
   $('#zoom').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.z === st.zoom); b.onclick = () => { st.zoom = b.dataset.z; renderDirs(); renderPreview(); }; });
   $('#filters').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.f === st.filter); b.onclick = () => { st.filter = b.dataset.f; renderDirs(); renderList(); }; });
@@ -496,7 +526,7 @@ function renderList(){
 function select(id){
   const e = byId(id); if (!e) return;
   if (dirOf(e) !== st.dir) { st.dir = dirOf(e); renderDirs(); }
-  st.sel = id; st.lane = st.src = null;
+  st.sel = id; st.lane = st.src = st.psrc = st.zsrc = null;
   renderList(); renderForm(); renderPreview(); renderHeader(); renderAerial(); renderPhoto();
 }
 function move(d){
@@ -520,7 +550,7 @@ function renderForm(){
   <div class="rowcard">
     <div class="title"><b>${esc(e['地点'] || '（地点なし）')}</b><span class="kind k-${kc}">${esc(k || '種別なし')}</span>
       <span class="small muted">${esc(e['方向'])}　${i + 1} / ${rows.length} 行目${lineOf(e._id) ? `（CSV ${lineOf(e._id)}行目）` : ''}</span></div>
-    <div class="what">${esc(KIND_WHAT[k] || '種別を選んでください')}${e['交差道路'] ? `　｜　交差道路：${esc(e['交差道路'])}` : ''}</div>
+    <div class="what" title="${esc(e['交差道路'] ? '交差道路：' + e['交差道路'] : '')}">${esc(KIND_WHAT[k] || '種別を選んでください')}${e['交差道路'] ? `　｜　交差道路：${esc(e['交差道路'])}` : ''}</div>
     <div class="nav"><button class="btn s" id="prevRow" ${prev ? '' : 'disabled'}>← 前の行</button><button class="btn s" id="nextRow" ${next ? '' : 'disabled'}>次の行 →</button></div>
   </div>
 
@@ -575,7 +605,7 @@ function renderForm(){
       e[inp.dataset.col] = inp.value; changed();
       if (inp.dataset.col === '接続') renderConn();
     });
-    if (inp.dataset.col === '車線') inp.addEventListener('change', () => { st.lane = st.src = null; renderForm(); });
+    if (inp.dataset.col === '車線') inp.addEventListener('change', () => { st.lane = st.src = st.psrc = st.zsrc = null; renderForm(); });
   });
   $('#prevRow').onclick = () => move(-1);
   $('#nextRow').onclick = () => move(1);
@@ -605,7 +635,16 @@ function renderForm(){
   renderMapillaryGuide();
 }
 
-// ---- 接続（ミニ図をクリックしてつなぐ）
+// ---- 接続（ミニ図で線を引いてつなぐ）
+// 交差道路の欄から、この行の左右にある道路の名前を読む（南行きは左が東）。render.cross_sides と同じ書き方
+function crossName(e, side){
+  const raw = (e['交差道路'] || '').trim();
+  if (!raw) return '';
+  if (!raw.includes(':')) return raw;
+  const east = /東:(\S*)/.exec(raw)?.[1], west = /西:(\S*)/.exec(raw)?.[1];
+  const leftIsEast = e['方向'] !== '北行き';
+  return (side === 'L') === leftIsEast ? (east ?? '') : (west ?? '');
+}
 function inferSide(code, j, n){
   const l = code.includes('L'), r = code.includes('R');
   if (l && !r) return 'L'; if (r && !l) return 'R';
@@ -614,8 +653,11 @@ function inferSide(code, j, n){
 function parseConn(raw, n){
   const toks = (raw || '').trim() ? raw.trim().split(/\s+/) : [];
   const per = Array.from({length:n}, () => []);
+  const inflows = [];   // ほかの通りからの合流（@紫明通>1）
   let ok = true;
   for (const t of toks) {
+    const i = /^@([<>]?)([^<>]*)>(\d+)$/.exec(t);
+    if (i) { inflows.push({side:{'<':'L', '>':'R', '':''}[i[1]], name:i[2], d:+i[3]}); continue; }
     const m = /^(\d+)>(.+)$/.exec(t);
     if (!m || +m[1] < 1 || +m[1] > n) { ok = false; continue; }
     per[+m[1] - 1].push(m[2]);
@@ -629,28 +671,45 @@ function parseConn(raw, n){
     if (t[0] === '@') { let r = t.slice(1), side = ''; if (r[0] === '<' || r[0] === '>') { side = r[0] === '<' ? 'L' : 'R'; r = r.slice(1); } return {k:'exit', side, name:r}; }
     ok = false; return {k:''};
   });
+  items.inflows = inflows;
   return {ok, items};
 }
-function buildConn(items, lanes){
-  return items.map((it, j) => {
+// 合流の書き方。交差道路の名前で側が決まるなら @紫明通>1、決まらなければ向きも書く
+function inflowText(row, it){
+  const name = (it.name || '').replace(/\s+/g, '');
+  if (!it.side) return `@${name}>${it.d}`;   // 向きを書いていないものは、書いたとおりに残す
+  const unique = name && name === crossName(row, it.side) && crossName(row, 'L') !== crossName(row, 'R');
+  return `@${unique ? '' : (it.side === 'L' ? '<' : '>')}${name}>${it.d}`;
+}
+function buildConn(items, lanes, row){
+  return [...items.map((it, j) => {
     if (!it.k) return '';
     if (it.k === 'n') return `${j+1}>${it.d}`;
     if (it.k === 'x') return `${j+1}>x`;
     const side = it.side || inferSide(lanes[j], j, lanes.length);
     const pre = side !== inferSide(lanes[j], j, lanes.length) ? (side === 'L' ? '<' : '>') : '';
     return `${j+1}>@${pre}${(it.name || '').replace(/\s+/g, '')}`;
-  }).filter(Boolean).join(' ');
+  }), ...(items.inflows || []).map(it => inflowText(row, it))].filter(Boolean).join(' ');
+}
+// 合流の側。render.py と同じ決め方（書いてなければ交差道路の名前、それでも決まらなければ車線の位置）
+function inflowSide(row, it, n){
+  if (it.side) return it.side;
+  const l = crossName(row, 'L'), r = crossName(row, 'R');
+  if (it.name && it.name === l && l !== r) return 'L';
+  if (it.name && it.name === r && l !== r) return 'R';
+  return it.d - 0.5 < n / 2 ? 'L' : 'R';
 }
 function renderConn(){
+  if (st.connDrag) return;   // 線を引いている途中に図の更新が届いても描き直さない
   const e = byId(st.sel); const box = $('#connArea'); if (!e || !box) return;
   const lanes = lanesOf(e);
   const {next} = neighbors(e);
   const nl = next ? lanesOf(next) : [];
   const raw = (e['接続'] || '').trim();
   const state = $('#connState');
-  if (!lanes.length) { box.innerHTML = '<p class="hint">先に ① で車線を入れてください。</p>'; state.textContent = '—'; state.className = 'st'; return; }
+  if (!lanes.length) { box.innerHTML = '<div class="connbox empty"><p class="hint">先に ① で車線を入れてください。</p></div>'; state.textContent = '—'; state.className = 'st'; return; }
   const {ok, items} = parseConn(raw, lanes.length);
-  if (!ok) { box.innerHTML = '<p class="hint">いまの接続は図で表せない書き方（1つの車線が2つに分かれる、書き間違いなど）です。下の「文字で編集する」で直してください。</p>'; state.textContent = '文字で入力'; state.className = 'st ng'; return; }
+  if (!ok) { box.innerHTML = '<div class="connbox empty"><p class="hint">いまの接続は図で表せない書き方（1つの車線が2つに分かれる、書き間違いなど）です。下の「文字で編集する」で直してください。</p></div>'; state.textContent = '文字で入力'; state.className = 'st ng'; return; }
   const auto = !raw;
   const a = st.preview?.auto?.[e._id];
   const shown = auto ? (a ? parseConn(a.text, lanes.length).items : items) : items;
@@ -660,83 +719,268 @@ function renderConn(){
 
   // ミニ図: 上の段が次の行、下の段がこの行（運転席から見て前が上）
   const W = 44, G = 6, TOP = 22, H = 34, BOT = 130, SIDE = 90;
+  // 入力は 直後 → 手前 → 直後 と進むので、前の行からこの行へも、この画面でつなげるようにする（前の行の接続に入る）
+  const before = neighbors(e).prev;
+  const pl = before ? lanesOf(before) : [];
+  const rawPrev = before ? (before['接続'] || '').trim() : '';
+  const prevAuto = before ? st.preview?.auto?.[before._id] : null;
+  const parsedPrev = parseConn(rawPrev || prevAuto?.text || '', pl.length);
+  const PREV = BOT + H + 90, PH = 30;
   const n1 = lanes.length, n2 = Math.max(nl.length, 1);
-  const inner = Math.max(n1, n2) * (W + G);
-  const width = inner + SIDE * 2, height = BOT + H + 22;
+  const inner = Math.max(n1, n2, pl.length) * (W + G);
+  const width = inner + SIDE * 2, height = PREV + PH + 22;   // 前の行がなくても高さは同じ
   const xb = j => SIDE + (inner - n1 * (W + G)) / 2 + j * (W + G) + G / 2;
   const xt = k => SIDE + (inner - nl.length * (W + G)) / 2 + k * (W + G) + G / 2;
-  let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  let svg = `<svg id="connSvg" viewBox="0 0 ${width} ${height}">`;
   svg += `<text class="lbl" x="6" y="${TOP + H / 2 + 4}">次の行</text><text class="lbl" x="6" y="${BOT + H / 2 + 4}">この行</text>`;
   if (next) svg += `<text class="lbl" x="${SIDE}" y="14">${esc(next['地点'])} ${esc(next['種別'])}${nl.length ? '' : '（車線が未入力）'}</text>`;
   else svg += `<text class="lbl" x="${SIDE}" y="14">（この先の行はありません。側道への離脱だけ書けます）</text>`;
+  // 左右の枠: ここまで線を引くと、側道への離脱になる
+  const ZW = SIDE - 10, ZY = TOP + H + 10, ZH = BOT - ZY - 10;
+  for (const side of ['L', 'R']) {
+    const zx = side === 'L' ? 4 : width - ZW - 4, zc = zx + ZW / 2, name = crossName(e, side);
+    svg += `<g class="zone ${st.zsrc?.tier === 'now' && st.zsrc.side === side ? 'sel' : ''}" data-exit="${side}"><title>車線からここへ引くと離脱、ここから次の行の車線へ引くと合流</title><rect x="${zx}" y="${ZY}" width="${ZW}" height="${ZH}" rx="6"/>
+      <text x="${zc}" y="${ZY + ZH / 2 - 4}">${side === 'L' ? '← 左の通り' : '右の通り →'}</text>
+      <text x="${zc}" y="${ZY + ZH / 2 + 12}">${esc(name.length > 7 ? name.slice(0, 7) + '…' : name)}</text></g>`;
+  }
+  // ほかの通りからの合流（枠から次の行の車線へ）
+  (items.inflows || []).forEach((it, i) => {
+    if (!(it.d >= 1 && it.d <= nl.length)) return;
+    const side = inflowSide(e, it, nl.length), xs = side === 'L' ? 4 + ZW : width - ZW - 4;
+    const x2 = xt(it.d - 1) + W / 2, ys = ZY + ZH / 2 - 14;
+    const d = `M${xs},${ys} C${x2},${ys} ${x2},${ys} ${x2},${TOP + H}`;
+    svg += `<g class="link" data-icut="${i}"><title>クリックすると、この合流を外します</title><path class="lk" d="${d}"/><path class="hit" d="${d}"/></g>`;
+  });
   shown.forEach((it, j) => {
     const x1 = xb(j) + W / 2, y1 = BOT, cls = 'lk' + (auto ? ' auto' : '') + (j === st.src ? ' sel' : '');
+    const line = (d, extra = '') => `<g class="link" data-cut="${j}"><title>クリックすると、この線を外します</title><path class="${cls}" d="${d}"/><path class="hit" d="${d}"/>${extra}</g>`;
     if (it.k === 'n' && it.d >= 1 && it.d <= nl.length) {
       const x2 = xt(it.d - 1) + W / 2, y2 = TOP + H, ym = (y1 + y2) / 2;
-      svg += `<path class="${cls}" d="M${x1},${y1} C${x1},${ym} ${x2},${ym} ${x2},${y2}"/>`;
+      svg += line(`M${x1},${y1} C${x1},${ym} ${x2},${ym} ${x2},${y2}`);
     } else if (it.k === 'exit') {
       const side = it.side || inferSide(lanes[j], j, lanes.length);
-      const xe = side === 'L' ? 22 : width - 22, ye = (TOP + H + BOT) / 2 + (side === 'L' ? -6 : 6);
-      svg += `<path class="${cls}" d="M${x1},${y1} C${x1},${ye} ${x1},${ye} ${xe},${ye}"/>`;
-      svg += `<text class="xname" x="${side === 'L' ? 4 : width - 4}" y="${ye - 9}" text-anchor="${side === 'L' ? 'start' : 'end'}">${esc(it.name || (side === 'L' ? '← 左へ' : '右へ →'))}</text>`;
+      const xe = side === 'L' ? 4 + ZW : width - ZW - 4, ye = ZY + ZH / 2 + 10;
+      // 枠に同じ名前が出ているなら、線の横には出さない
+      svg += line(`M${x1},${y1} C${x1},${ye} ${x1},${ye} ${xe},${ye}`,
+        it.name && it.name !== crossName(e, side) ? `<text class="xname" x="${(x1 + xe) / 2}" y="${ye + 15}" text-anchor="middle">${esc(it.name)}</text>` : '');
     } else if (it.k === 'x') {
-      svg += `<path class="${cls}" d="M${x1},${y1} L${x1},${y1 - 22}"/><text class="q" x="${x1}" y="${y1 - 28}" fill="#d92d20">×</text>`;
+      svg += line(`M${x1},${y1} L${x1},${y1 - 22}`, `<text class="q" x="${x1}" y="${y1 - 28}" fill="#d92d20">×</text>`);
     } else if (next && nl.length) {
       svg += `<text class="q" x="${x1}" y="${y1 - 10}">?</text>`;
     }
   });
   nl.forEach((c, k) => {
-    svg += `<g class="ln ${st.src === null ? 'dim' : ''}" data-t="${k}"><rect x="${xt(k)}" y="${TOP}" width="${W}" height="${H}" rx="4"/><text x="${xt(k) + W / 2}" y="${TOP + H / 2}">${esc(GLYPH[c] || '?')}</text></g>`;
+    svg += `<g class="ln" data-t="${k}"><rect x="${xt(k)}" y="${TOP}" width="${W}" height="${H}" rx="4"/><text x="${xt(k) + W / 2}" y="${TOP + H / 2}">${esc(GLYPH[c] || '?')}</text></g>`;
   });
   lanes.forEach((c, j) => {
     svg += `<g class="ln src ${j === st.src ? 'sel' : ''}" data-s="${j}"><rect x="${xb(j)}" y="${BOT}" width="${W}" height="${H}" rx="4"/><text x="${xb(j) + W / 2}" y="${BOT + H / 2}">${esc(GLYPH[c] || '?')}</text></g>`;
   });
-  svg += '</svg>';
+  const xp = k => SIDE + (inner - pl.length * (W + G)) / 2 + k * (W + G) + G / 2;
+  const prevOk = before && pl.length && parsedPrev.ok;
+  if (before) {
+    svg += `<text class="lbl" x="6" y="${PREV + PH / 2 + 4}">前の行</text>
+      <text class="lbl" x="${SIDE}" y="${PREV + PH + 14}">${esc(before['地点'])} ${esc(before['種別'])}${pl.length ? `（${rawPrev ? '手入力' : '自動補完'}）` : '（車線が未入力）'}</text>`;
+    const ZY2 = BOT + H + 10, ZH2 = PREV - ZY2 - 10;
+    if (prevOk) for (const side of ['L', 'R']) {
+      const zx = side === 'L' ? 4 : width - ZW - 4, zc = zx + ZW / 2, name = crossName(before, side);
+      svg += `<g class="zone ${st.zsrc?.tier === 'prev' && st.zsrc.side === side ? 'sel' : ''}" data-pexit="${side}"><title>前の行の車線からここへ引くと離脱、ここからこの行の車線へ引くと合流</title><rect x="${zx}" y="${ZY2}" width="${ZW}" height="${ZH2}" rx="6"/>
+        <text x="${zc}" y="${ZY2 + ZH2 / 2 - 4}">${side === 'L' ? '← 左の通り' : '右の通り →'}</text>
+        <text x="${zc}" y="${ZY2 + ZH2 / 2 + 12}">${esc(name.length > 7 ? name.slice(0, 7) + '…' : name)}</text></g>`;
+    }
+    if (prevOk) (parsedPrev.items.inflows || []).forEach((it, i) => {
+      if (!(it.d >= 1 && it.d <= n1)) return;
+      const side = inflowSide(before, it, n1), xs = side === 'L' ? 4 + ZW : width - ZW - 4;
+      const x2 = xb(it.d - 1) + W / 2, ys = ZY2 + ZH2 / 2 - 14;
+      const d = `M${xs},${ys} C${x2},${ys} ${x2},${ys} ${x2},${BOT + H}`;
+      svg += `<g class="link" data-picut="${i}"><title>クリックすると、この合流を外します</title><path class="pk" d="${d}"/><path class="hit" d="${d}"/></g>`;
+    });
+    if (prevOk) parsedPrev.items.forEach((it, k) => {
+      const x1 = xp(k) + W / 2, y1 = PREV, cls = 'pk' + (rawPrev ? '' : ' auto') + (k === st.psrc ? ' sel' : '');
+      const line = (d, extra = '') => `<g class="link" data-pcut="${k}"><title>クリックすると、この線を外します</title><path class="${cls}" d="${d}"/><path class="hit" d="${d}"/>${extra}</g>`;
+      if (it.k === 'n' && it.d >= 1 && it.d <= n1) {
+        const x2 = xb(it.d - 1) + W / 2, y2 = BOT + H, ym = (y1 + y2) / 2;
+        svg += line(`M${x1},${y1} C${x1},${ym} ${x2},${ym} ${x2},${y2}`);
+      } else if (it.k === 'exit') {
+        const side = it.side || inferSide(pl[k], k, pl.length);
+        const xe = side === 'L' ? 4 + ZW : width - ZW - 4, ye = ZY2 + ZH2 / 2;
+        svg += line(`M${x1},${y1} C${x1},${ye} ${x1},${ye} ${xe},${ye}`);
+      } else if (it.k === 'x') svg += line(`M${x1},${y1} L${x1},${y1 - 14}`, `<text class="qp" x="${x1}" y="${y1 - 18}">×</text>`);
+      else svg += `<text class="qp" x="${x1}" y="${y1 - 6}">?</text>`;
+    });
+    pl.forEach((c, k) => { svg += `<g class="ln pv ${k === st.psrc ? 'sel' : ''}" ${prevOk ? `data-p="${k}"` : ''}><rect x="${xp(k)}" y="${PREV}" width="${W}" height="${PH}" rx="4"/><text x="${xp(k) + W / 2}" y="${PREV + PH / 2}">${esc(GLYPH[c] || '?')}</text></g>`; });
+  }
+  svg += '<path class="rubber" id="connRubber"/></svg>';
 
-  const sel = st.src;
-  const it = sel !== null ? items[sel] : null;
-  const steps = st.src === null
-    ? '下の段（この行）の車線をクリックして選んでください。'
-    : `車線${sel + 1}を選択中：上の段（次の行）の車線をクリックするとつながります。曲がって出ていくなら「離脱」。`;
+  const sel = st.src, psel = st.psrc ?? null;
+  const it = sel !== null ? items[sel] : psel !== null ? parsedPrev.items[psel] : null;
+  const zsel = st.zsrc ?? null;
+  const steps = zsel
+    ? `${zsel.side === 'L' ? '左' : '右'}の通りを選択中：合流する先の車線（${zsel.tier === 'now' ? '次の行' : 'この行'}）をクリックしてください。`
+    : psel !== null
+      ? `前の行の車線${psel + 1}を選択中：つなぎ先（この行の車線か左右の枠）をクリックしてください。`
+      : sel !== null
+        ? `車線${sel + 1}を選択中：つなぎ先（次の行の車線か左右の枠）をクリックしてください。`
+        : '車線をつなぎ先までドラッグします（前の行 → この行 → 次の行）。枠から車線へ引くと、ほかの通りからの合流です。線をクリックすると外せます。';
   box.innerHTML = `<div class="connbox">${svg}</div>
-    <p class="hint">${steps}</p>
+    <p class="hint">${steps}${before && pl.length && !parsedPrev.ok ? '<br>前の行の接続は図で表せない書き方なので、前の行で直してください。' : ''}${next && !nl.length ? '<br>次の行の車線が未入力です。次の行へ進むと、その画面でこの行からの線を引けます。' : ''}</p>
     <div class="conntools">
-      <button class="btn s" data-act="L" ${sel === null ? 'disabled' : ''}>← 左へ離脱</button>
-      <button class="btn s" data-act="R" ${sel === null ? 'disabled' : ''}>右へ離脱 →</button>
-      <button class="btn s" data-act="x" ${sel === null ? 'disabled' : ''} title="行き先を決めずに途切れさせる">× 途切れ</button>
-      <button class="btn s" data-act="none" ${sel === null ? 'disabled' : ''}>この車線を未指定に</button>
+      <button class="btn s" data-act="x" ${sel === null && psel === null ? 'disabled' : ''} title="行き先を決めずに途切れさせる">× 途切れ</button>
+      ${next && !nl.length ? '<button class="btn s" data-act="next" title="次の行へ移ります">次の行の車線を入力する →</button>' : ''}
       <span class="spacer"></span>
-      <button class="btn s" data-act="auto" ${auto ? 'disabled' : ''} title="接続を空欄にして自動補完に任せます">自動補完に戻す</button>
+      ${before && pl.length ? `<button class="btn s" data-act="pauto" ${rawPrev ? '' : 'disabled'} title="前の行の接続を空欄にして自動補完に任せます">前の行を自動補完に戻す</button>` : ''}
+      <button class="btn s" data-act="auto" ${auto ? 'disabled' : ''} title="この行の接続を空欄にして自動補完に任せます">この行を自動補完に戻す</button>
     </div>
     ${it && it.k === 'exit' ? `<div class="grid2"><label>離脱先</label><input type="text" id="c-name" value="${esc(it.name || '')}" placeholder="空欄なら交差道路の名前を使います"></div>` : ''}
     <div class="autonote ${auto && unresolved.length ? 'ng' : ''}" id="autonote"></div>`;
 
-  const setItems = fn => edit(() => {
-    const cur = parseConn(e['接続'], lanes.length).items;
-    const base = (e['接続'] || '').trim() ? cur : (a ? parseConn(a.text, lanes.length).items : cur);   // 自動の結果から手直しを始める
+  // 接続の書き換え。空欄なら自動の結果から手直しを始める。前の行を書き換えるときは row に前の行を渡す
+  const setItemsOf = (row, rowLanes, fn) => edit(() => {
+    const cur = parseConn(row['接続'], rowLanes.length).items;
+    const autoText = st.preview?.auto?.[row._id]?.text;
+    const base = (row['接続'] || '').trim() ? cur : (autoText ? parseConn(autoText, rowLanes.length).items : cur);
     fn(base);
-    e['接続'] = buildConn(base, lanes);
+    row['接続'] = buildConn(base, rowLanes, row);
   });
-  box.querySelectorAll('.ln.src').forEach(g => g.onclick = () => { const j = +g.dataset.s; st.src = st.src === j ? null : j; renderConn(); });
-  box.querySelectorAll('.ln[data-t]').forEach(g => g.onclick = () => {
+  const setItems = fn => setItemsOf(e, lanes, fn);
+  const setPrevItems = fn => setItemsOf(before, pl, fn);
+  // 離脱。反対側へ移したら名前を空にする（東西で名前が違う交差道路で、前の側の名前を残さない）
+  const exitItem = (was, side, code, j, n) => {
+    const same = was.k === 'exit' && (was.side || inferSide(code, j, n)) === side;
+    return {k:'exit', side, name: same ? was.name : ''};
+  };
+  // target は つなぎ先の要素（次の行の車線・この行の車線・左右の枠）
+  const connect = (j, target) => setItems(b => {
+    b[j] = target.dataset.t !== undefined ? {k:'n', d:+target.dataset.t + 1} : exitItem(b[j], target.dataset.exit, lanes[j], j, lanes.length);
+  });
+  const connectPrev = (k, target) => setPrevItems(b => {
+    b[k] = target.dataset.s !== undefined ? {k:'n', d:+target.dataset.s + 1} : exitItem(b[k], target.dataset.pexit, pl[k], k, pl.length);
+  });
+  // 合流。同じ通りから同じ車線へは 1 本だけ
+  const addInflow = (setter, row, side, d) => setter(b => {
+    const count = row === e ? nl.length : n1;   // 合流先の行の車線数
+    b.inflows = (b.inflows || []).filter(it => !(it.d === d && inflowSide(row, it, count) === side));
+    b.inflows.push({side, name:crossName(row, side), d});
+  });
+  const cvs = $('#connSvg'), rubber = $('#connRubber');
+  const TARGETS = {now:'.connbox [data-t], .connbox [data-exit]', prev:'.connbox .ln.src, .connbox [data-pexit]',
+    zone:'.connbox [data-t]', pzone:'.connbox .ln.src'};
+  const targetAt = (x, y, tier) => document.elementFromPoint(x, y)?.closest?.(TARGETS[tier]) || null;
+  const showDrop = el => { box.querySelectorAll('.drop').forEach(d => d.classList.remove('drop')); el?.classList.add('drop'); };
+  const startDrag = (g, tier, j) => g.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    st.connDrag = {tier, j, id:ev.pointerId, x:ev.clientX, y:ev.clientY, moved:false};
+    g.classList.add('sel');
+    try { cvs.setPointerCapture(ev.pointerId); } catch (_) {}
+  });
+  box.querySelectorAll('.ln.src').forEach(g => startDrag(g, 'now', +g.dataset.s));
+  box.querySelectorAll('.ln.pv[data-p]').forEach(g => startDrag(g, 'prev', +g.dataset.p));
+  box.querySelectorAll('.zone[data-exit]').forEach(g => startDrag(g, 'zone', g.dataset.exit));
+  box.querySelectorAll('.zone[data-pexit]').forEach(g => startDrag(g, 'pzone', g.dataset.pexit));
+  const dragStart = d => {
+    if (d.tier === 'now') return [xb(d.j) + W / 2, BOT];
+    if (d.tier === 'prev') return [xp(d.j) + W / 2, PREV];
+    const r = box.querySelector(d.tier === 'zone' ? `.zone[data-exit="${d.j}"] rect` : `.zone[data-pexit="${d.j}"] rect`);
+    return [+r.getAttribute('x') + (d.j === 'L' ? +r.getAttribute('width') : 0), +r.getAttribute('y') + +r.getAttribute('height') / 2];
+  };
+  cvs.addEventListener('pointermove', ev => {
+    const d = st.connDrag;
+    if (!d) return;
+    if (!d.moved && Math.hypot(ev.clientX - d.x, ev.clientY - d.y) < 5) return;   // 少し動いただけならクリック
+    d.moved = true;
+    const p = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(cvs.getScreenCTM().inverse());
+    const [sx, sy] = dragStart(d);
+    rubber.setAttribute('d', `M${sx},${sy} L${p.x},${p.y}`);
+    showDrop(targetAt(ev.clientX, ev.clientY, d.tier));
+  });
+  // クリックの操作: 車線を選んでから、つなぎ先を選ぶ。順に入力できるよう、車線へつないだら次の車線を選ぶ
+  const clickLane = (tier, j, g) => {
+    if (tier === 'now' && st.zsrc?.tier === 'prev') {   // 下の枠を選んでいれば、ここへ合流
+      addInflow(setPrevItems, before, st.zsrc.side, j + 1);
+      st.zsrc = null;
+    } else if (tier === 'now' && st.psrc !== null && st.psrc !== undefined) {   // 前の行の車線を選んでいれば、ここがつなぎ先
+      const k = st.psrc;
+      connectPrev(k, g);
+      st.psrc = k + 1 < pl.length ? k + 1 : null;
+    } else if (tier === 'now') { st.src = st.src === j ? null : j; st.psrc = st.zsrc = null; }
+    else { st.psrc = st.psrc === j ? null : j; st.src = st.zsrc = null; }
+    renderConn();
+  };
+  // 枠のクリック: 車線を選んでいれば離脱、選んでいなければ合流元として選ぶ
+  const clickZone = (tier, side, g) => {
+    if (tier === 'zone' && st.src !== null) { connect(st.src, g); st.src = null; }
+    else if (tier === 'pzone' && st.psrc !== null && st.psrc !== undefined) { connectPrev(st.psrc, g); st.psrc = null; }
+    else {
+      const t = tier === 'zone' ? 'now' : 'prev';
+      st.zsrc = st.zsrc?.tier === t && st.zsrc.side === side ? null : {tier:t, side};
+      st.src = st.psrc = null;
+    }
+    renderConn();
+  };
+  const dragEnd = ev => {
+    const d = st.connDrag;
+    if (!d) return;
+    st.connDrag = null;
+    if (!d.moved) {
+      if (d.tier === 'zone') clickZone(d.tier, d.j, box.querySelector(`.zone[data-exit="${d.j}"]`));
+      else if (d.tier === 'pzone') clickZone(d.tier, d.j, box.querySelector(`.zone[data-pexit="${d.j}"]`));
+      else clickLane(d.tier, d.j, box.querySelector(d.tier === 'now' ? `.ln.src[data-s="${d.j}"]` : `.ln.pv[data-p="${d.j}"]`));
+      return;
+    }
+    const target = ev.type === 'pointerup' ? targetAt(ev.clientX, ev.clientY, d.tier) : null;
+    st.src = st.psrc = st.zsrc = null;
+    if (target) {   // つなぎ先の外で離したら、何も変えない
+      if (d.tier === 'now') connect(d.j, target);
+      else if (d.tier === 'prev') connectPrev(d.j, target);
+      else if (d.tier === 'zone') addInflow(setItems, e, d.j, +target.dataset.t + 1);
+      else addInflow(setPrevItems, before, d.j, +target.dataset.s + 1);
+    }
+    renderConn();
+  };
+  cvs.addEventListener('pointerup', dragEnd);
+  cvs.addEventListener('pointercancel', dragEnd);
+  box.querySelectorAll('.connbox [data-t]').forEach(g => g.onclick = () => {
+    if (st.zsrc?.tier === 'now') {   // 枠を選んでいれば、ここへ合流
+      addInflow(setItems, e, st.zsrc.side, +g.dataset.t + 1);
+      st.zsrc = null;
+      renderConn();
+      return;
+    }
     if (st.src === null) return;
-    const j = st.src, k = +g.dataset.t + 1;
-    setItems(b => { b[j] = (b[j].k === 'n' && b[j].d === k) ? {k:''} : {k:'n', d:k}; });
-    st.src = j + 1 < lanes.length ? j + 1 : null;   // 次の車線へ
+    const j = st.src;
+    connect(j, g);
+    st.src = j + 1 < lanes.length ? j + 1 : null;
+    renderConn();
+  });
+  const cutInflow = (setter, i) => { setter(b => { b.inflows.splice(i, 1); }); st.src = st.psrc = st.zsrc = null; renderConn(); };
+  box.querySelectorAll('[data-icut]').forEach(g => g.onclick = () => cutInflow(setItems, +g.dataset.icut));
+  box.querySelectorAll('[data-picut]').forEach(g => g.onclick = () => cutInflow(setPrevItems, +g.dataset.picut));
+  box.querySelectorAll('[data-cut]').forEach(g => g.onclick = () => {
+    const j = +g.dataset.cut;
+    setItems(b => { b[j] = {k:''}; });
+    st.src = st.psrc = st.zsrc = null;
+    renderConn();
+  });
+  box.querySelectorAll('[data-pcut]').forEach(g => g.onclick = () => {
+    const k = +g.dataset.pcut;
+    setPrevItems(b => { b[k] = {k:''}; });
+    st.src = st.psrc = st.zsrc = null;
     renderConn();
   });
   box.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
-    const act = b.dataset.act, j = st.src;
-    if (act === 'auto') { edit(() => { e['接続'] = ''; }); st.src = null; renderConn(); return; }
-    setItems(base => {
-      if (act === 'L' || act === 'R') base[j] = {k:'exit', side:act, name: base[j].k === 'exit' ? base[j].name : ''};
-      else if (act === 'x') base[j] = {k:'x'};
-      else base[j] = {k:''};
-    });
+    const act = b.dataset.act, j = st.src, k = st.psrc;
+    if (act === 'next') { move(1); return; }
+    if (act === 'auto') { edit(() => { e['接続'] = ''; }); st.src = st.psrc = st.zsrc = null; renderConn(); return; }
+    if (act === 'pauto') { edit(() => { before['接続'] = ''; }); st.src = st.psrc = st.zsrc = null; renderConn(); return; }
+    if (j !== null) setItems(base => { base[j] = {k:'x'}; });
+    else setPrevItems(base => { base[k] = {k:'x'}; });
     renderConn();
   });
   const nm = $('#c-name');
-  if (nm) nm.onchange = () => { setItems(base => { base[sel] = {...base[sel], name: nm.value}; }); renderConn(); };
+  if (nm) nm.onchange = () => {
+    if (sel !== null) setItems(base => { base[sel] = {...base[sel], name: nm.value}; });
+    else setPrevItems(base => { base[psel] = {...base[psel], name: nm.value}; });
+    renderConn();
+  };
   const fc = $('#f-conn'); if (fc && document.activeElement !== fc) fc.value = e['接続'] || '';
   renderAutoNote();
 }
@@ -1156,7 +1400,7 @@ $('#add').onclick = () => edit(() => {
   const e = newRow(cur, extra);
   st.entries.splice(cur ? st.entries.indexOf(cur) + 1 : st.entries.length, 0, e);
   sortInsert(e, cur);
-  st.sel = e._id; st.lane = st.src = null;
+  st.sel = e._id; st.lane = st.src = st.psrc = st.zsrc = null;
 });
 $('#dup').onclick = () => { const cur = byId(st.sel); if (!cur) return; edit(() => {
   const e = Object.assign(newRow(cur), JSON.parse(JSON.stringify(cur)), {_id: `n${Date.now()}_${++st.newId}`});

@@ -76,10 +76,10 @@ class Issue:
 @dataclass
 class Link:
     src: int                  # この行の車線（0 始まり）
-    kind: str                 # lane（次の行の車線へ）/ exit（側道へ離脱）/ cut（途切れ）
+    kind: str                 # lane（次の行の車線へ）/ exit（側道へ離脱）/ cut（途切れ）/ in（ほかの通りから合流。src は -1）
     dst: int | None = None    # 次の行の車線（0 始まり）
-    name: str = ""            # 離脱先の通り名（分からなければ空）
-    side: str = ""            # 離脱の向き L / R（進行方向に向かって）
+    name: str = ""            # 離脱先・合流元の通り名（分からなければ空）
+    side: str = ""            # 離脱・合流の向き L / R（進行方向に向かって）
     auto: bool = False        # 自動補完で決めたか
 
 
@@ -321,12 +321,18 @@ def infer_side(code: str, j: int, n: int) -> str:
 
 
 _TOKEN = re.compile(r"(\d+)>(.+)")
+_INFLOW = re.compile(r"@([<>]?)([^<>]*)>(\d+)")   # @紫明通>1 / @<紫明通>1 / @<>1（名前は交差道路から）
 
 
 def parse_conn(raw: str) -> tuple[list[tuple[str, int, str, int | None, str, str]], list[str]]:
     """接続の文字列を (元の書き方, 元の車線, 種類, 行き先, 通り名, 向き) の並びにする。"""
     tokens, bad = [], []
     for tok in raw.split():
+        m = _INFLOW.fullmatch(tok)
+        if m:
+            side = {"<": "L", ">": "R", "": ""}[m.group(1)]
+            tokens.append((tok, 0, "in", int(m.group(3)), m.group(2).strip(), side))
+            continue
         m = _TOKEN.fullmatch(tok)
         if not m:
             bad.append(tok)
@@ -354,6 +360,8 @@ def links_to_text(links: list[Link]) -> str:
             out.append(f"{l.src + 1}>{l.dst + 1}")
         elif l.kind == "exit":
             out.append(f"{l.src + 1}>@{l.name}")
+        elif l.kind == "in":
+            out.append(f"@{l.name}>{l.dst + 1}")
         else:
             out.append(f"{l.src + 1}>x")
     return " ".join(out)
@@ -390,11 +398,37 @@ def _resolve(cur: Row, nxt: Row | None, crosses: dict[str, str], issues: list[Is
         t = Transition(cur, nxt, "explicit")
         tokens, bad = parse_conn(cur.conn)
         for b in bad:
-            add("エラー", f"接続 '{b}' の書き方が不正です（例: 1>1　2>@五条通　3>x）")
+            add("エラー", f"接続 '{b}' の書き方が不正です（例: 1>1　2>@五条通　3>x　@紫明通>1）")
         covered: set[int] = set()
         seen: set[tuple] = set()
         unused_last = []
         for tok, src, kind, dst, name, side in tokens:
+            if kind == "in":
+                key = (kind, dst, name, side)   # 側を補う前の書き方で重複を見る
+                if key in seen:
+                    add("警告", f"接続 '{tok}' が重複しています")
+                elif nxt is None:
+                    unused_last.append(tok)
+                elif nxt.lanes is None:
+                    add("警告", f"接続 '{tok}': 次の行（{nxt.line}行目）の車線が未入力のため確かめられません")
+                elif not 1 <= dst <= len(nxt.lanes):
+                    add("エラー", f"接続 '{tok}': 次の行（{nxt.line}行目）に車線{dst}はありません"
+                                  f"（次の行の車線は{len(nxt.lanes)}本）")
+                else:
+                    if not side:   # 交差道路の名前で側を決める。決まらなければ車線の位置で
+                        if name and name == lname != rname:
+                            side = "L"
+                        elif name and name == rname != lname:
+                            side = "R"
+                        else:
+                            side = "L" if dst - 0.5 < len(nxt.lanes) / 2 else "R"
+                    if not name and sides and not side_name(side):
+                        east_west = "東" if (side == "L") == (cur.direction == "南行き") else "西"
+                        add("警告", f"次の行の車線{dst}へ{'左' if side == 'L' else '右'}から合流していますが、"
+                                    f"交差道路では{east_west}側に道路がありません（T字路）")
+                    t.links.append(Link(-1, "in", dst - 1, name=name or side_name(side), side=side))
+                seen.add(key)
+                continue
             if not 1 <= src <= n:
                 add("エラー", f"接続 '{tok}': 車線{src}はありません（この行の車線は{n}本）")
                 continue
@@ -429,7 +463,7 @@ def _resolve(cur: Row, nxt: Row | None, crosses: dict[str, str], issues: list[Is
                 add("警告", f"車線{_numbers(missing)}の行き先が指定されていません")
             t.unresolved = missing
             if nxt.lanes:
-                hit = {l.dst for l in t.links if l.kind == "lane"}
+                hit = {l.dst for l in t.links if l.kind in ("lane", "in")}
                 t.new_lanes = [k for k in range(len(nxt.lanes)) if k not in hit]
         return t
 
@@ -758,12 +792,8 @@ def render_svg(route: Route) -> str:
             for yy in (yc - 15, yc + 15):
                 bg.append(f'<line class="stripedge" x1="{_f(x1)}" y1="{_f(yy)}" '
                           f'x2="{_f(x2)}" y2="{_f(yy)}"/>')
-            if not sides:
-                name = p
-            elif east == west:
-                name = east
-            else:
-                name = f"東:{east or 'なし'} 西:{west or 'なし'}"
+            # 東西で名前が違うときは帯の両端に出すので、左の欄では繰り返さない（帯の端の文字と重なる）
+            name = east if sides and east == west else p
             labels.append(f'<text class="stripname" x="24" y="{_f(Y(yc) + 4)}">┄ {_e(name)}'
                           f'{"" if name == p else "（" + _e(p) + "）"}</text>')
             if sides and east != west:
@@ -787,6 +817,35 @@ def render_svg(route: Route) -> str:
             a, b = row_span(k), row_span(k + 1)
             fg.append(f'<path class="blank" d="M{_f((a[0] + a[1]) / 2)},{_f(y1)} '
                       f'L{_f((b[0] + b[1]) / 2)},{_f(y2)}"/>')
+
+        # ほかの通りからの合流（交差点の帯の外から、車線と同じ幅で入る。本線の下に描く）
+        inflows = [l for l in t.links if l.kind == "in"]
+        if nxt is not None and nxt.lanes and inflows:
+            conf = _weaker(row.conf, nxt.conf)
+            cls = CONF_CLASS[conf]
+            if gap and gap[2]:
+                yc = gap[0] + (gap[1] - gap[0]) / (len(gap[2]) + 1)
+            else:
+                yc = y1 + max(gh, G.EDGE) * 0.55
+            by_side_in: dict[int, int] = {}
+            for l in inflows:
+                d_ = out_dir(l.side)
+                nth = by_side_in.get(d_, 0)
+                by_side_in[d_] = nth + 1
+                b1, b2 = span(k + 1, l.dst)
+                bx, wd = (b1 + b2) / 2, b2 - b1
+                half = wd / 2 + 5
+                # 離脱の矢印（高さ 18）と重ならないよう、その先へずらす。次の行にはみ出さない
+                ye = min(yc + 9 + half + 4 + nth * (wd + 12), y2 - wd * 0.6)
+                xs = (road_r if d_ > 0 else road_l) + d_ * G.EXIT_OUT
+                where = l.name or (("左" if l.side == "L" else "右") + "の通り")
+                fg.append(f'<path class="ex c-{cls}" data-line="{row.line}" style="stroke-width:{_f(wd)}" '
+                          f'd="M{_f(xs)},{_f(ye)} C{_f(bx)},{_f(ye)} {_f(bx)},{_f(ye)} {_f(bx)},{_f(y2)}">'
+                          f'<title>{nxt.line}行目 車線{l.dst + 1}：{_e(where)}から合流</title></path>')
+                fg.append(f'<polygon class="ah c-{cls}" points="{_f(xs + d_ * 14)},{_f(ye - half)} '
+                          f'{_f(xs)},{_f(ye)} {_f(xs + d_ * 14)},{_f(ye + half)}"/>')
+                labels.append(f'<text class="exname" x="{_f(xs + d_ * 19)}" y="{_f(Y(ye) + 4)}" '
+                              f'text-anchor="{"start" if d_ > 0 else "end"}">{_e(where)}から</text>')
 
         # 車線どうしのつながり（合流は細くして寄せる）
         lanes = [l for l in t.links if l.kind == "lane"]
@@ -967,6 +1026,8 @@ def render_legend() -> str:
             f'<path class="rb c-k" d="{_ribbon(22, 36, 2, 22, 36, 32)}"/>'), "合流（細くして寄せる）"),
         (sw('<path class="ex c-k" d="M10,2 C10,22 10,22 28,22"/>'
             '<polygon class="ah c-k" points="28,14 40,22 28,30"/>'), "側道へ離脱"),
+        (sw('<path class="ex c-k" style="stroke-width:14" d="M16,24 C32,24 32,24 32,2"/>'
+            '<polygon class="ah c-k" points="4,14 16,24 4,34"/>'), "ほかの通りから合流"),
         (sw(f'<path class="rb c-k" d="{_ribbon(13, 15, 2, 14, 32, 32)}"/>'), "新しく現れる車線"),
         (sw('<rect class="ph" x="8" y="2" width="28" height="30" rx="3"/>'), "未入力"),
         (sw('<path class="stub" d="M22,2 L22,16"/><text class="q" x="22" y="30">?</text>'),
